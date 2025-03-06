@@ -22,7 +22,7 @@ public class JwtTokenProvider {
 
 
     // generate JWT token
-    public String generateToken(Authentication authentication){
+    public String generateToken(Authentication authentication, String userId){
 
         String username = authentication.getName();
 
@@ -36,6 +36,7 @@ public class JwtTokenProvider {
                 .expiration(expireDate)
                 .signWith(key(), Jwts.SIG.HS256)
                 .claim("roles", authentication.getAuthorities())
+                .claim("userId", userId)
                 .compact();
     }
 
@@ -52,6 +53,17 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    // get userId from JWT token
+    public String getUserId(String token){
+
+        return Jwts.parser()
+                .verifyWith(key())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("userId", String.class);
     }
 
     // validate JWT token

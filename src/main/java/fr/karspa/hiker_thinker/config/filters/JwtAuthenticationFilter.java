@@ -1,5 +1,6 @@
 package fr.karspa.hiker_thinker.config.filters;
 
+import com.fasterxml.jackson.core.ObjectCodec;
 import fr.karspa.hiker_thinker.services.auth.CustomUserDetailsService;
 import fr.karspa.hiker_thinker.services.auth.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
@@ -17,6 +18,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @AllArgsConstructor
@@ -34,12 +37,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if(StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
             String email = jwtTokenProvider.getUsername(token);
+            String userId = jwtTokenProvider.getUserId(token);
 
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            //Détails personnalisés dans le authToken de l'application pour la suite de cette requête.
+            Map<String, Object> customDetails = new HashMap<>();
+            customDetails.put("userId", userId);
+            customDetails.put("requestInfo", new WebAuthenticationDetailsSource().buildDetails(request));
+
+            authToken.setDetails(customDetails);
 
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }

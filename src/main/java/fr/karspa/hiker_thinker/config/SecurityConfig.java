@@ -46,7 +46,6 @@ public class SecurityConfig {
     private JwtAuthenticationEntryPoint authenticationEntryPoint;
     private JwtAuthenticationFilter authenticationFilter;
 
-    private CustomUserDetailsService userDetailsService;
 
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService) {

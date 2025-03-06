@@ -2,14 +2,16 @@ package fr.karspa.hiker_thinker.services.auth;
 
 import fr.karspa.hiker_thinker.dtos.LoginDTO;
 import fr.karspa.hiker_thinker.dtos.RegisterDTO;
+import fr.karspa.hiker_thinker.dtos.responses.LoginResponseDTO;
+import fr.karspa.hiker_thinker.dtos.responses.RegisterResponseDTO;
 import fr.karspa.hiker_thinker.model.AuthUser;
 import fr.karspa.hiker_thinker.repository.AuthUserRepository;
+import fr.karspa.hiker_thinker.utils.ResponseModel;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,16 +28,36 @@ public class AuthServiceImpl implements AuthService {
     private PasswordEncoder passwordEncoder;
 
     @Override
-    public String login(LoginDTO loginDTO) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()));
+    public ResponseModel<LoginResponseDTO> login(LoginDTO loginDTO) {
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        AuthUser test = userRepository.findByEmail(loginDTO.getEmail()).get();
+        System.out.println(test);
 
-        return jwtTokenProvider.generateToken(authentication);
+        try{
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtTokenProvider.generateToken(authentication);
+
+            AuthUser user = userRepository.findByEmail(loginDTO.getEmail()).get(); //Ne peut être nul car vérifier juste au dessus dans l'authentification
+
+            LoginResponseDTO loginResponseDTO = LoginResponseDTO.builder()
+                    .userId(user.getId())
+                    .email(user.getEmail())
+                    .jwt(token)
+                    .build();
+
+            return ResponseModel.buildResponse("200", "Connexion réussie.", loginResponseDTO);
+
+
+        }catch(AuthenticationException e){
+            System.err.println(e.getMessage());
+            return ResponseModel.buildResponse("703", "Erreur d'authentification. Pseudo ou mot de passe incorrect.", null);
+        }
+
     }
 
     @Override
-    public String register(RegisterDTO registerDTO) {
+    public ResponseModel<RegisterResponseDTO> register(RegisterDTO registerDTO) {
 
         //TODO : VALIDATION DU DTO ??
 
@@ -48,14 +70,14 @@ public class AuthServiceImpl implements AuthService {
             .build();
 
 
-        try{
-            if(userRepository.findByEmail(user.getEmail()).isPresent())
-                return "ERREUR";
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            AuthUser savedUser = userRepository.save(user);
-            return "SAVED USER";
-        } catch(Exception e){
-            return "ERREUR";
-        }
+        if(userRepository.findByEmail(user.getEmail()).isPresent())
+            return ResponseModel.buildResponse("409", "Email non disponible.", null);
+
+        AuthUser savedUser = userRepository.save(user);
+
+        RegisterResponseDTO registerResponseDTO = new RegisterResponseDTO(savedUser.getId(), savedUser.getEmail());
+
+        return ResponseModel.buildResponse("201", "Utilisateur créé avec succès.", registerResponseDTO);
+
     }
 }

@@ -1,11 +1,14 @@
 package fr.karspa.hiker_thinker.services.impl;
 
+import com.mongodb.client.result.UpdateResult;
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.AddEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
-import fr.karspa.hiker_thinker.repository.AuthUserRepository;
 import fr.karspa.hiker_thinker.repository.UserRepository;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -33,8 +36,15 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public boolean addEquipment(String category, Equipment equipment) {
-        return false;
+    public ResponseModel<EquipmentDTO> addEquipment(String userId, AddEquipmentDTO addEquipmentDTO) {
+
+        UpdateResult result = userRepository.addEquipment(userId, addEquipmentDTO);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", addEquipmentDTO.getEquipment());
+        } else {
+            return ResponseModel.buildResponse("404", "Utilisateur non trouvé.", null);
+        }
     }
 
     @Override

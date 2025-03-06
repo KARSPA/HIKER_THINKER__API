@@ -1,36 +1,31 @@
 package fr.karspa.hiker_thinker.controller;
 
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.AddEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
-import fr.karspa.hiker_thinker.dtos.responses.LoginResponseDTO;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
+import fr.karspa.hiker_thinker.utils.TokenUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
-import java.util.Objects;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/inventory")
 public class InventoryController {
 
     private InventoryService inventoryService;
+    private TokenUtils tokenUtils;
 
-    public InventoryController(InventoryService inventoryService) {
+    public InventoryController(InventoryService inventoryService, TokenUtils tokenUtils) {
         this.inventoryService = inventoryService;
+        this.tokenUtils = tokenUtils;
     }
 
     @GetMapping("")
     public ResponseEntity<ResponseModel<InventoryDTO>> getInventory(){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Map<String, Object> details = (Map<String, Object>) authentication.getDetails();
+        String userId = tokenUtils.retreiveUserId();
 
-        String userId = (String) details.get("userId");
         ResponseModel<InventoryDTO> response = inventoryService.findByUserId(userId);
 
         if(response.getCode().equals("200")){
@@ -38,6 +33,19 @@ public class InventoryController {
         }else{
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
-
     }
+
+    @PostMapping("")
+    public ResponseEntity<ResponseModel<EquipmentDTO>> addEquipment(@RequestBody AddEquipmentDTO addEquipmentDTO){
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<EquipmentDTO> response = inventoryService.addEquipment(userId, addEquipmentDTO);
+
+        if(response.getCode().equals("201")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
 }

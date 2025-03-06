@@ -30,9 +30,6 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseModel<LoginResponseDTO> login(LoginDTO loginDTO) {
 
-        AuthUser test = userRepository.findByEmail(loginDTO.getEmail()).get();
-        System.out.println(test);
-
         try{
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);

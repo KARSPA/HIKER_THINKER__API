@@ -29,8 +29,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ResponseModel<LoginResponseDTO>> login(@RequestBody LoginDTO loginDTO) {
 
-        System.out.println(loginDTO);
-
         ResponseModel<LoginResponseDTO> response = authService.login(loginDTO);
 
         if(response.getCode().equals("200")){

@@ -1,0 +1,13 @@
+services:
+  mongodb:
+    image: 'mongo:8.0.5'
+    container_name: 'HT_mongo'
+    environment:
+      - 'MONGO_INITDB_ROOT_USERNAME=karspa'
+      - 'MONGO_INITDB_ROOT_PASSWORD=test123'
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo:/data
+volumes:
+  mongo: {}

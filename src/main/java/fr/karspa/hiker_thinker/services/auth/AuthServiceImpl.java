@@ -35,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String token = jwtTokenProvider.generateToken(authentication);
 
-            AuthUser user = userRepository.findByEmail(loginDTO.getEmail()).get(); //Ne peut être nul car vérifier juste au dessus dans l'authentification
+            AuthUser user = userRepository.findByEmailForAuth(loginDTO.getEmail()).get(); //Ne peut être nul car vérifier juste au dessus dans l'authentification
 
             LoginResponseDTO loginResponseDTO = LoginResponseDTO.builder()
                     .userId(user.getId())
@@ -64,10 +64,12 @@ public class AuthServiceImpl implements AuthService {
             .firstName(registerDTO.getFirstName())
             .lastName(registerDTO.getLastName())
             .roles(List.of("ROLE_USER"))
+            .active(true)
+            .inventory(List.of())
             .build();
 
 
-        if(userRepository.findByEmail(user.getEmail()).isPresent())
+        if(userRepository.findByEmailForAuth(user.getEmail()).isPresent())
             return ResponseModel.buildResponse("409", "Email non disponible.", null);
 
         AuthUser savedUser = userRepository.save(user);

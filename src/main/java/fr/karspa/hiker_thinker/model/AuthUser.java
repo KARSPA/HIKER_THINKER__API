@@ -29,4 +29,6 @@ public class AuthUser {
     private String firstName;
     private String lastName;
 
+    private List<Equipment> inventory;
+
 }

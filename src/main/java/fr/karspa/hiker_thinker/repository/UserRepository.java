@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Repository
@@ -49,6 +50,10 @@ public class UserRepository {
         String category = addEquipmentDTO.getCategory();
         EquipmentDTO equipment = addEquipmentDTO.getEquipment();
 
+        //Générer un nouvel identifiant unique pour cet équipement
+        String uniqueId = UUID.randomUUID().toString();
+        equipment.setId(uniqueId);
+
         // Construire la requête pour trouver l'utilisateur par son _id
         Query query = new Query(Criteria.where("_id").is(userId));
 
@@ -60,6 +65,21 @@ public class UserRepository {
         // Effectuer la mise à jour dans la collection "users"
         return mongoTemplate.updateFirst(query, update, User.class);
 
+    }
+
+
+    public boolean checkAvailableEquipmentName(String userId, AddEquipmentDTO addEquipmentDTO) {
+        // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
+        String category = addEquipmentDTO.getCategory();
+        EquipmentDTO equipment = addEquipmentDTO.getEquipment();
+
+        Query query = new Query(Criteria.where("_id").is(userId)
+            .and("inventory."+category+".name").is(equipment.getName()));
+
+        // On récupère le document utilisateur avec un champ spécifique
+        Document doc = mongoTemplate.findOne(query, Document.class, "users");
+
+        return (doc == null);
     }
 
 

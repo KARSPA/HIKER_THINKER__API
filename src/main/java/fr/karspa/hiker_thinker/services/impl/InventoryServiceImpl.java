@@ -38,6 +38,13 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public ResponseModel<EquipmentDTO> addEquipment(String userId, AddEquipmentDTO addEquipmentDTO) {
 
+        //Vérifier l'unicité du name avant d'enregistrer
+        boolean isNameAvailable = this.checkAvailableEquipmentName(userId, addEquipmentDTO);
+
+        if(!isNameAvailable){
+            return ResponseModel.buildResponse("400", "Un équipement avec ce nom existe déjà. ("+addEquipmentDTO.getEquipment().getName()+")", null);
+        }
+
         UpdateResult result = userRepository.addEquipment(userId, addEquipmentDTO);
 
         if (result.getMatchedCount() > 0) {
@@ -55,5 +62,13 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public boolean removeEquipment(String category, Equipment equipment) {
         return false;
+    }
+
+
+
+
+
+    private boolean checkAvailableEquipmentName(String userId, AddEquipmentDTO addEquipmentDTO){
+        return userRepository.checkAvailableEquipmentName(userId, addEquipmentDTO);
     }
 }

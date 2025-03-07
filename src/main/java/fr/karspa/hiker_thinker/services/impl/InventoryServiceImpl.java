@@ -75,7 +75,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment) {
 
-        //Vérifier que l'équipement avec cet id existe dans l'inventaire (dans la catégorie indiquée).
+        //Vérifier que l'équipement avec cet id existe dans l'inventaire.
         boolean doesIdExists = this.checkEquipmentExistsById(userId, equipment);
 
         if(!doesIdExists){
@@ -88,6 +88,12 @@ public class InventoryServiceImpl implements InventoryService {
         boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipment);
         if(!isNameAvailable){
             return ResponseModel.buildResponse("409", "Un équipement avec ce nom existe déjà dans votre inventaire. ("+equipment.getName()+")", null);
+        }
+
+        // Vérifier que la nouvelle catégorie existe bien dans inventory.categories
+        boolean doesCategoryExist = userRepository.checkCategoryExistsByName(userId, equipment);
+        if(!doesCategoryExist){
+            return ResponseModel.buildResponse("400", "La catégorie de l'équipement n'existe pas dans votre inventaire. Veuillez la créée avant.", null);
         }
 
         //Modifier l'équipement avec ce qui est passé dans la requête.

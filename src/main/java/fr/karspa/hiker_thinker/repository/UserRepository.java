@@ -50,17 +50,15 @@ public class UserRepository {
 
 
     public UpdateResult modifyEquipment(String userId, Equipment equipment) {
-        // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = equipment.getCategory();
 
-        // Construire la query pour cibler l'utilisateur et l'équipement dans l'array de la catégorie
+        // Construire la query pour cibler l'utilisateur et l'équipement
         Query query = new Query(
                 Criteria.where("_id").is(userId)
-                        .and("inventory." + category + "._id").is(equipment.getId())
+                        .and("inventory.equipments._id").is(equipment.getId())
         );
 
         // Utiliser l'opérateur positional "$" pour remplacer l'équipement trouvé
-        Update update = new Update().set("inventory." + category + ".$", equipment);
+        Update update = new Update().set("inventory.equipments.$", equipment);
 
         // Exécuter l'update sans avoir besoin d'arrayFilters
         return mongoTemplate.updateFirst(query, update, User.class);
@@ -81,8 +79,6 @@ public class UserRepository {
         // Construire l'update en utilisant l'opérateur $push sur le champ "inventory.<category>"
         Update update = new Update().push("inventory.equipments", equipment);
 
-        System.err.println(update);
-
         // Effectuer la mise à jour dans la collection "users"
         return mongoTemplate.updateFirst(query, update, User.class);
     }
@@ -95,15 +91,13 @@ public class UserRepository {
         // Construire l'update en utilisant l'opérateur $push sur le champ "inventory.<category>"
         Update update = new Update().push("inventory.categories", category);
 
-        System.err.println(update);
-
         // Effectuer la mise à jour dans la collection "users"
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 
     public boolean checkAvailableEquipmentName(String userId, Equipment equipment) {
+
         //SI id dans l'équipement est passé c'est qu'on modifie
-        System.err.println(equipment);
         if(equipment.getId() != null){
             return this.checkAvailableEquipmentNameModify(userId, equipment);
         }else{
@@ -124,9 +118,10 @@ public class UserRepository {
         Query query = new Query(
                 Criteria.where("_id").is(userId)
                         .and("inventory.equipments").elemMatch(
-                                Criteria.where("name").is(equipment.getName())
-                                        .and("_id").ne(equipment.getId())
-                        ));
+                        Criteria.where("name").is(equipment.getName())
+                                .and("_id").ne(equipment.getId())
+                ));
+
 
         Document doc = mongoTemplate.findOne(query, Document.class, "users");
 

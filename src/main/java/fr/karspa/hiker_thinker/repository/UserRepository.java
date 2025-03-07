@@ -66,8 +66,12 @@ public class UserRepository {
 
 
     public UpdateResult removeEquipment(String userId, String equipmentId) {
+        // Construire la query pour cibler l'utilisateur par son _id
+        Query query = new Query(Criteria.where("_id").is(userId));
+        
+        Update update = new Update().pull("inventory.equipments", new Document("_id", equipmentId));
 
-        return null;
+        return mongoTemplate.updateFirst(query, update, User.class);
     }
 
 

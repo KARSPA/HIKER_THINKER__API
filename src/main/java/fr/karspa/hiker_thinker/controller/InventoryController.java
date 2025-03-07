@@ -47,7 +47,7 @@ public class InventoryController {
         }
     }
 
-    @PostMapping("/equipment/modify")
+    @PatchMapping("/equipment/modify")
     public ResponseEntity<ResponseModel<Equipment>> modifyEquipment(@RequestBody Equipment equipment){
         String userId = tokenUtils.retreiveUserId();
 
@@ -60,13 +60,13 @@ public class InventoryController {
         }
     }
 
-    @PostMapping("/equipment/remove")
-    public ResponseEntity<ResponseModel<Equipment>> removeEquipment(@RequestBody String equipmentId){
+    @DeleteMapping("/equipment/remove")
+    public ResponseEntity<ResponseModel<Equipment>> removeEquipment(@RequestParam(name = "id") String equipmentId){
         String userId = tokenUtils.retreiveUserId();
 
         ResponseModel<Equipment> response = inventoryService.removeEquipment(userId, equipmentId);
 
-        if(response.getCode().equals("200")){
+        if(response.getCode().equals("204")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

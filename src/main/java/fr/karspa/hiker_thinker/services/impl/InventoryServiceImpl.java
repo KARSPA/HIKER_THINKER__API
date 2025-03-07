@@ -8,6 +8,8 @@ import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class InventoryServiceImpl implements InventoryService {
 
@@ -45,12 +47,28 @@ public class InventoryServiceImpl implements InventoryService {
             return ResponseModel.buildResponse("400", "Un équipement avec ce nom existe déjà. ("+equipment.getName()+")", null);
         }
 
-        UpdateResult result = userRepository.addEquipment(userId, equipment);
+        //Générer un nouvel identifiant unique pour cet équipement
+        String uniqueId = UUID.randomUUID().toString();
+        equipment.setId(uniqueId);
 
-        if (result.getMatchedCount() > 0) {
+        boolean doesCategoryExist = userRepository.checkCategoryExistsByName(userId, equipment);
+
+        // Si la catégorie n'existe pas, l'ajouter dans la liste des catégories de l'inventaire
+        if (!doesCategoryExist) {
+            UpdateResult resultCat = userRepository.addCategoryToCategoryList(userId, equipment.getCategory());
+            // Si aucune catégorie n'a été ajoutée, retourner une erreur
+            if (resultCat.getModifiedCount() == 0) {
+                return ResponseModel.buildResponse("500", "Échec de l'ajout de la catégorie.", null);
+            }
+        }
+
+        // Ajouter l'équipement à la liste des équipements de l'inventaire
+        UpdateResult resultEquip = userRepository.addEquipmentToEquipmentList(userId, equipment);
+
+        if (resultEquip.getModifiedCount() > 0) {
             return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", equipment);
         } else {
-            return ResponseModel.buildResponse("404", "Utilisateur non trouvé.", null);
+            return ResponseModel.buildResponse("500", "Échec de l'ajout de l'équipement.", null);
         }
     }
 
@@ -97,9 +115,6 @@ public class InventoryServiceImpl implements InventoryService {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
     }
-
-
-
 
 
     private boolean checkEquipmentExistsById(String userId, Equipment equipment){

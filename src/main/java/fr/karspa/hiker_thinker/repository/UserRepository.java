@@ -4,6 +4,7 @@ import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
+import fr.karspa.hiker_thinker.utils.ResponseModel;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -48,27 +49,6 @@ public class UserRepository {
     }
 
 
-    public UpdateResult addEquipment(String userId, Equipment equipment) {
-        // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = equipment.getCategory();
-
-        //Générer un nouvel identifiant unique pour cet équipement
-        String uniqueId = UUID.randomUUID().toString();
-        equipment.setId(uniqueId);
-
-        // Construire la requête pour trouver l'utilisateur par son _id
-        Query query = new Query(Criteria.where("_id").is(userId));
-
-        // Construire l'update en utilisant l'opérateur $push sur le champ "inventory.<category>"
-        Update update = new Update().push("inventory." + category, equipment);
-
-        System.err.println(update);
-
-        // Effectuer la mise à jour dans la collection "users"
-        return mongoTemplate.updateFirst(query, update, User.class);
-
-    }
-
     public UpdateResult modifyEquipment(String userId, Equipment equipment) {
         // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
         String category = equipment.getCategory();
@@ -92,6 +72,34 @@ public class UserRepository {
         return null;
     }
 
+
+
+    public UpdateResult addEquipmentToEquipmentList(String userId, Equipment equipment) {
+        // Construire la requête pour trouver l'utilisateur par son _id
+        Query query = new Query(Criteria.where("_id").is(userId));
+
+        // Construire l'update en utilisant l'opérateur $push sur le champ "inventory.<category>"
+        Update update = new Update().push("inventory.equipments", equipment);
+
+        System.err.println(update);
+
+        // Effectuer la mise à jour dans la collection "users"
+        return mongoTemplate.updateFirst(query, update, User.class);
+    }
+
+    public UpdateResult addCategoryToCategoryList(String userId, String category) {
+
+        // Construire la requête pour trouver l'utilisateur par son _id
+        Query query = new Query(Criteria.where("_id").is(userId));
+
+        // Construire l'update en utilisant l'opérateur $push sur le champ "inventory.<category>"
+        Update update = new Update().push("inventory.categories", category);
+
+        System.err.println(update);
+
+        // Effectuer la mise à jour dans la collection "users"
+        return mongoTemplate.updateFirst(query, update, User.class);
+    }
 
     public boolean checkAvailableEquipmentName(String userId, Equipment equipment) {
         //SI id dans l'équipement est passé c'est qu'on modifie
@@ -131,6 +139,17 @@ public class UserRepository {
                 .and("inventory.equipments._id").is(equipment.getId()));
 
         // On récupère le document utilisateur avec un champ spécifique
+        Document doc = mongoTemplate.findOne(query, Document.class, "users");
+
+        return (doc != null);
+    }
+
+    public boolean checkCategoryExistsByName(String userId, Equipment equipment) {
+
+        Query query = new Query(
+                Criteria.where("_id").is(userId)
+                        .and("inventory.categories").is(equipment.getCategory()));
+
         Document doc = mongoTemplate.findOne(query, Document.class, "users");
 
         return (doc != null);

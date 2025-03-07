@@ -17,5 +17,7 @@ public class EquipmentDTO {
 
     private Float weight;
 
+    private String category;
+
     private String sourceId;
 }

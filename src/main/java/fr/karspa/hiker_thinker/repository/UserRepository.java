@@ -1,9 +1,6 @@
 package fr.karspa.hiker_thinker.repository;
 
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
-import fr.karspa.hiker_thinker.dtos.AddEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.EquipmentDTO;
 import fr.karspa.hiker_thinker.model.User;
 import org.bson.Document;
@@ -44,20 +41,19 @@ public class UserRepository {
     }
 
 
-    public UpdateResult addEquipment(String userId, AddEquipmentDTO addEquipmentDTO) {
+    public UpdateResult addEquipment(String userId, EquipmentDTO equipmentDTO) {
         // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = addEquipmentDTO.getCategory();
-        EquipmentDTO equipment = addEquipmentDTO.getEquipment();
+        String category = equipmentDTO.getCategory();
 
         //Générer un nouvel identifiant unique pour cet équipement
         String uniqueId = UUID.randomUUID().toString();
-        equipment.setId(uniqueId);
+        equipmentDTO.setId(uniqueId);
 
         // Construire la requête pour trouver l'utilisateur par son _id
         Query query = new Query(Criteria.where("_id").is(userId));
 
         // Construire l'update en utilisant l'opérateur $push sur le champ "inventory.<category>"
-        Update update = new Update().push("inventory." + category, equipment);
+        Update update = new Update().push("inventory." + category, equipmentDTO);
 
         System.err.println(update);
 
@@ -66,36 +62,40 @@ public class UserRepository {
 
     }
 
-    public UpdateResult modifyEquipment(String userId, AddEquipmentDTO addEquipmentDTO) {
+    public UpdateResult modifyEquipment(String userId, EquipmentDTO equipmentDTO) {
         // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = addEquipmentDTO.getCategory();
-        EquipmentDTO equipment = addEquipmentDTO.getEquipment();
+        String category = equipmentDTO.getCategory();
 
         // Construire la query pour cibler l'utilisateur et l'équipement dans l'array de la catégorie
         Query query = new Query(
                 Criteria.where("_id").is(userId)
-                        .and("inventory." + category + "._id").is(equipment.getId())
+                        .and("inventory." + category + "._id").is(equipmentDTO.getId())
         );
 
         // Utiliser l'opérateur positional "$" pour remplacer l'équipement trouvé
-        Update update = new Update().set("inventory." + category + ".$", equipment);
+        Update update = new Update().set("inventory." + category + ".$", equipmentDTO);
 
         // Exécuter l'update sans avoir besoin d'arrayFilters
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 
 
-    public boolean checkAvailableEquipmentName(String userId, AddEquipmentDTO addEquipmentDTO) {
+    public UpdateResult removeEquipment(String userId, String equipmentId) {
+
+        return null;
+    }
+
+
+    public boolean checkAvailableEquipmentName(String userId, EquipmentDTO equipmentDTO) {
         // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = addEquipmentDTO.getCategory();
-        EquipmentDTO equipment = addEquipmentDTO.getEquipment();
+        String category = equipmentDTO.getCategory();
 
         //SI id dans l'équipement est passé c'est qu'on modifie
-        System.err.println(equipment);
-        if(equipment.getId() != null){
-            return this.checkAvailableEquipmentNameModify(userId, category, equipment);
+        System.err.println(equipmentDTO);
+        if(equipmentDTO.getId() != null){
+            return this.checkAvailableEquipmentNameModify(userId, category, equipmentDTO);
         }else{
-            return this.checkAvailableEquipmentNameAdd(userId, category, equipment);
+            return this.checkAvailableEquipmentNameAdd(userId, category, equipmentDTO);
         }
     }
 
@@ -121,13 +121,12 @@ public class UserRepository {
         return (doc == null);
     }
 
-    public boolean checkEquipmentExistsById(String userId, AddEquipmentDTO addEquipmentDTO) {
+    public boolean checkEquipmentExistsById(String userId, EquipmentDTO equipmentDTO) {
         // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = addEquipmentDTO.getCategory();
-        EquipmentDTO equipment = addEquipmentDTO.getEquipment();
+        String category = equipmentDTO.getCategory();
 
         Query query = new Query(Criteria.where("_id").is(userId)
-                .and("inventory."+category+"._id").is(equipment.getId()));
+                .and("inventory."+category+"._id").is(equipmentDTO.getId()));
 
         // On récupère le document utilisateur avec un champ spécifique
         Document doc = mongoTemplate.findOne(query, Document.class, "users");

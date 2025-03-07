@@ -8,8 +8,6 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
-import java.util.Map;
-
 @Data
 @Builder
 @ToString
@@ -29,6 +27,6 @@ public class User {
     private String firstName;
     private String lastName;
 
-    private Map<String, List<Equipment>> inventory;
+    private Inventory inventory;
 
 }

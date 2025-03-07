@@ -4,6 +4,7 @@ import fr.karspa.hiker_thinker.dtos.LoginDTO;
 import fr.karspa.hiker_thinker.dtos.RegisterDTO;
 import fr.karspa.hiker_thinker.dtos.responses.LoginResponseDTO;
 import fr.karspa.hiker_thinker.dtos.responses.RegisterResponseDTO;
+import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.repository.AuthUserRepository;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -67,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
             .lastName(registerDTO.getLastName())
             .roles(List.of("ROLE_USER"))
             .active(true)
-            .inventory(new HashMap<String, List<Equipment>>())
+            .inventory(new Inventory(new ArrayList<>(), new ArrayList<>()))
             .build();
 
 

@@ -55,17 +55,48 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public boolean modifyEquipment(String category, Equipment equipment) {
-        return false;
+    public ResponseModel<EquipmentDTO> modifyEquipment(String userId, AddEquipmentDTO addEquipmentDTO) {
+
+        //Vérifier que l'équipement avec cet id existe dans l'inventaire (dans la catégorie indiquée).
+        boolean doesIdExists = this.checkEquipmentExistsById(userId, addEquipmentDTO);
+
+        if(!doesIdExists){
+            return ResponseModel.buildResponse("404", "Aucun équipement avec cet identifiant n'existe pour cette catégorie.", null);
+        }
+
+        //TODO : => VALIDER LES DONNÉES EN ENTRÉE ET S'ASSURER QU'IL Y AI BIEN UN ID.
+
+        //On appelle la même méthode que pour l'ajout mais les requêtes de vérifications ne sont pas les mêmes si un id à l'équipement est passé ou non.
+        boolean isNameAvailable = this.checkAvailableEquipmentName(userId, addEquipmentDTO);
+        if(!isNameAvailable){
+            return ResponseModel.buildResponse("409", "Un équipement avec ce nom existe déjà dans votre inventaire. ("+addEquipmentDTO.getEquipment().getName()+")", null);
+        }
+
+        //Modifier l'équipement avec ce qui est passé dans la requête.
+        UpdateResult result = userRepository.modifyEquipment(userId, addEquipmentDTO);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Équipement modifié avec succès.", addEquipmentDTO.getEquipment());
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
+
     }
+
+
 
     @Override
-    public boolean removeEquipment(String category, Equipment equipment) {
-        return false;
+    public ResponseModel<EquipmentDTO> removeEquipment(String userId, AddEquipmentDTO addEquipmentDTO) {
+        return null;
     }
 
 
 
+
+
+    private boolean checkEquipmentExistsById(String userId, AddEquipmentDTO addEquipmentDTO){
+        return userRepository.checkEquipmentExistsById(userId, addEquipmentDTO);
+    }
 
 
     private boolean checkAvailableEquipmentName(String userId, AddEquipmentDTO addEquipmentDTO){

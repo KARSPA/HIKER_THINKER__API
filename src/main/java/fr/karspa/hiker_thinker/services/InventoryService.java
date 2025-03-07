@@ -14,9 +14,9 @@ public interface InventoryService {
 
     ResponseModel<EquipmentDTO> addEquipment(String userId, AddEquipmentDTO addEquipmentDTO); // Ajouter un équipement à l'inventaire
 
-    boolean modifyEquipment(String category, Equipment equipment); // Modifier un équipement de l'inventaire
+    ResponseModel<EquipmentDTO> modifyEquipment(String userId, AddEquipmentDTO addEquipmentDTO); // Modifier un équipement de l'inventaire
 
-    boolean removeEquipment(String category, Equipment equipment); // Supprimer un équipement de l'inventaire
+    ResponseModel<EquipmentDTO> removeEquipment(String userId, AddEquipmentDTO addEquipmentDTO); // Supprimer un équipement de l'inventaire
 
 
 }

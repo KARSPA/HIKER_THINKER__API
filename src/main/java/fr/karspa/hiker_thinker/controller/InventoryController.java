@@ -35,13 +35,26 @@ public class InventoryController {
         }
     }
 
-    @PostMapping("")
+    @PostMapping("/equipment/add")
     public ResponseEntity<ResponseModel<EquipmentDTO>> addEquipment(@RequestBody AddEquipmentDTO addEquipmentDTO){
         String userId = tokenUtils.retreiveUserId();
 
         ResponseModel<EquipmentDTO> response = inventoryService.addEquipment(userId, addEquipmentDTO);
 
         if(response.getCode().equals("201")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @PostMapping("/equipment/modify")
+    public ResponseEntity<ResponseModel<EquipmentDTO>> modifyEquipment(@RequestBody AddEquipmentDTO addEquipmentDTO){
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<EquipmentDTO> response = inventoryService.modifyEquipment(userId, addEquipmentDTO);
+
+        if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

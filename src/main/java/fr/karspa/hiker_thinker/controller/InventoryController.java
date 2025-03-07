@@ -73,4 +73,18 @@ public class InventoryController {
         }
     }
 
+
+    @PostMapping("/category/add")
+    public ResponseEntity<ResponseModel<String>> addCategory(@RequestParam(name = "name") String categoryName){
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<String> response = inventoryService.addCategory(userId, categoryName);
+
+        if(response.getCode().equals("201")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
 }

@@ -3,7 +3,7 @@ package fr.karspa.hiker_thinker.services.impl;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
-import fr.karspa.hiker_thinker.repository.UserRepository;
+import fr.karspa.hiker_thinker.repository.InventoryRepository;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import org.springframework.stereotype.Service;
@@ -13,17 +13,17 @@ import java.util.UUID;
 @Service
 public class InventoryServiceImpl implements InventoryService {
 
-    private UserRepository userRepository;
+    private InventoryRepository inventoryRepository;
 
-    public InventoryServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public InventoryServiceImpl(InventoryRepository inventoryRepository) {
+        this.inventoryRepository = inventoryRepository;
     }
 
     @Override
     public ResponseModel<InventoryDTO> findByUserId(String userId) {
 
         //Récupérer l'inventaire dans la BDD
-        var inventory = userRepository.findInventoryByUserId(userId);
+        var inventory = inventoryRepository.getInventory(userId);
 
         //Check si null
         if(inventory == null)
@@ -51,11 +51,11 @@ public class InventoryServiceImpl implements InventoryService {
         String uniqueId = UUID.randomUUID().toString();
         equipment.setId(uniqueId);
 
-        boolean doesCategoryExist = userRepository.checkCategoryExistsByName(userId, equipment);
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, equipment.getCategory());
 
         // Si la catégorie n'existe pas, l'ajouter dans la liste des catégories de l'inventaire
         if (!doesCategoryExist) {
-            UpdateResult resultCat = userRepository.addCategoryToCategoryList(userId, equipment.getCategory());
+            UpdateResult resultCat = inventoryRepository.addCategoryToCategoryList(userId, equipment.getCategory());
             // Si aucune catégorie n'a été ajoutée, retourner une erreur
             if (resultCat.getModifiedCount() == 0) {
                 return ResponseModel.buildResponse("500", "Échec de l'ajout de la catégorie.", null);
@@ -63,7 +63,7 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         // Ajouter l'équipement à la liste des équipements de l'inventaire
-        UpdateResult resultEquip = userRepository.addEquipmentToEquipmentList(userId, equipment);
+        UpdateResult resultEquip = inventoryRepository.addEquipmentToEquipmentList(userId, equipment);
 
         if (resultEquip.getModifiedCount() > 0) {
             return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", equipment);
@@ -91,13 +91,13 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         // Vérifier que la nouvelle catégorie existe bien dans inventory.categories
-        boolean doesCategoryExist = userRepository.checkCategoryExistsByName(userId, equipment);
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, equipment.getCategory());
         if(!doesCategoryExist){
             return ResponseModel.buildResponse("400", "La catégorie de l'équipement n'existe pas dans votre inventaire. Veuillez la créée avant.", null);
         }
 
         //Modifier l'équipement avec ce qui est passé dans la requête.
-        UpdateResult result = userRepository.modifyEquipment(userId, equipment);
+        UpdateResult result = inventoryRepository.modifyEquipment(userId, equipment);
 
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("200", "Équipement modifié avec succès.", equipment);
@@ -113,7 +113,7 @@ public class InventoryServiceImpl implements InventoryService {
     public ResponseModel<Equipment> removeEquipment(String userId, String equipmentId) {
 
         // Supprimer l'élément (en utilisant l'equipmentId passé en paramètre).
-        UpdateResult result = userRepository.removeEquipment(userId, equipmentId);
+        UpdateResult result = inventoryRepository.removeEquipment(userId, equipmentId);
 
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("204", "Équipement supprimé avec succès.", null);
@@ -123,12 +123,30 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
 
+
+    public ResponseModel<String> addCategory(String userId, String category){
+
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, category);
+        if(doesCategoryExist){
+            return ResponseModel.buildResponse("400", "La catégorie existe déjà dans l'inventaire.", null);
+        }
+
+        UpdateResult result = inventoryRepository.addCategoryToCategoryList(userId, category);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("201", "Catégorie créée avec succès.", category);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
+    }
+
+
     private boolean checkEquipmentExistsById(String userId, Equipment equipment){
-        return userRepository.checkEquipmentExistsById(userId, equipment);
+        return inventoryRepository.checkEquipmentExistsById(userId, equipment);
     }
 
 
     private boolean checkAvailableEquipmentName(String userId, Equipment equipment){
-        return userRepository.checkAvailableEquipmentName(userId, equipment);
+        return inventoryRepository.checkAvailableEquipmentName(userId, equipment);
     }
 }

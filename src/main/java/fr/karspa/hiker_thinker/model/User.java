@@ -22,7 +22,7 @@ public class User {
     private String password;
 
     private List<String> roles;
-    private boolean active;
+    private Boolean active;
 
     private String firstName;
     private String lastName;

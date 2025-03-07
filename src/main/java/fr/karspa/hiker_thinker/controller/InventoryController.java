@@ -1,7 +1,7 @@
 package fr.karspa.hiker_thinker.controller;
 
-import fr.karspa.hiker_thinker.dtos.responses.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
+import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import fr.karspa.hiker_thinker.utils.TokenUtils;
@@ -35,10 +35,10 @@ public class InventoryController {
     }
 
     @PostMapping("/equipment/add")
-    public ResponseEntity<ResponseModel<EquipmentDTO>> addEquipment(@RequestBody EquipmentDTO equipmentDTO){
+    public ResponseEntity<ResponseModel<Equipment>> addEquipment(@RequestBody Equipment equipment){
         String userId = tokenUtils.retreiveUserId();
 
-        ResponseModel<EquipmentDTO> response = inventoryService.addEquipment(userId, equipmentDTO);
+        ResponseModel<Equipment> response = inventoryService.addEquipment(userId, equipment);
 
         if(response.getCode().equals("201")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -48,10 +48,10 @@ public class InventoryController {
     }
 
     @PostMapping("/equipment/modify")
-    public ResponseEntity<ResponseModel<EquipmentDTO>> modifyEquipment(@RequestBody EquipmentDTO equipmentDTO){
+    public ResponseEntity<ResponseModel<Equipment>> modifyEquipment(@RequestBody Equipment equipment){
         String userId = tokenUtils.retreiveUserId();
 
-        ResponseModel<EquipmentDTO> response = inventoryService.modifyEquipment(userId, equipmentDTO);
+        ResponseModel<Equipment> response = inventoryService.modifyEquipment(userId, equipment);
 
         if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -61,10 +61,10 @@ public class InventoryController {
     }
 
     @PostMapping("/equipment/remove")
-    public ResponseEntity<ResponseModel<EquipmentDTO>> removeEquipment(@RequestBody String equipmentId){
+    public ResponseEntity<ResponseModel<Equipment>> removeEquipment(@RequestBody String equipmentId){
         String userId = tokenUtils.retreiveUserId();
 
-        ResponseModel<EquipmentDTO> response = inventoryService.removeEquipment(userId, equipmentId);
+        ResponseModel<Equipment> response = inventoryService.removeEquipment(userId, equipmentId);
 
         if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);

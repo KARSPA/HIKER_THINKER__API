@@ -1,8 +1,8 @@
 package fr.karspa.hiker_thinker.services.impl;
 
 import com.mongodb.client.result.UpdateResult;
-import fr.karspa.hiker_thinker.dtos.responses.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
+import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.repository.UserRepository;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
@@ -36,29 +36,29 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public ResponseModel<EquipmentDTO> addEquipment(String userId, EquipmentDTO equipmentDTO) {
+    public ResponseModel<Equipment> addEquipment(String userId, Equipment equipment) {
 
         //Vérifier l'unicité du name avant d'enregistrer
-        boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipmentDTO);
+        boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipment);
 
         if(!isNameAvailable){
-            return ResponseModel.buildResponse("400", "Un équipement avec ce nom existe déjà. ("+equipmentDTO.getName()+")", null);
+            return ResponseModel.buildResponse("400", "Un équipement avec ce nom existe déjà. ("+equipment.getName()+")", null);
         }
 
-        UpdateResult result = userRepository.addEquipment(userId, equipmentDTO);
+        UpdateResult result = userRepository.addEquipment(userId, equipment);
 
         if (result.getMatchedCount() > 0) {
-            return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", equipmentDTO);
+            return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", equipment);
         } else {
             return ResponseModel.buildResponse("404", "Utilisateur non trouvé.", null);
         }
     }
 
     @Override
-    public ResponseModel<EquipmentDTO> modifyEquipment(String userId, EquipmentDTO equipmentDTO) {
+    public ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment) {
 
         //Vérifier que l'équipement avec cet id existe dans l'inventaire (dans la catégorie indiquée).
-        boolean doesIdExists = this.checkEquipmentExistsById(userId, equipmentDTO);
+        boolean doesIdExists = this.checkEquipmentExistsById(userId, equipment);
 
         if(!doesIdExists){
             return ResponseModel.buildResponse("404", "Aucun équipement avec cet identifiant n'existe pour cette catégorie.", null);
@@ -67,16 +67,16 @@ public class InventoryServiceImpl implements InventoryService {
         //TODO : => VALIDER LES DONNÉES EN ENTRÉE ET S'ASSURER QU'IL Y AI BIEN UN ID.
 
         //On appelle la même méthode que pour l'ajout mais les requêtes de vérifications ne sont pas les mêmes si un id à l'équipement est passé ou non.
-        boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipmentDTO);
+        boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipment);
         if(!isNameAvailable){
-            return ResponseModel.buildResponse("409", "Un équipement avec ce nom existe déjà dans votre inventaire. ("+equipmentDTO.getName()+")", null);
+            return ResponseModel.buildResponse("409", "Un équipement avec ce nom existe déjà dans votre inventaire. ("+equipment.getName()+")", null);
         }
 
         //Modifier l'équipement avec ce qui est passé dans la requête.
-        UpdateResult result = userRepository.modifyEquipment(userId, equipmentDTO);
+        UpdateResult result = userRepository.modifyEquipment(userId, equipment);
 
         if (result.getMatchedCount() > 0) {
-            return ResponseModel.buildResponse("200", "Équipement modifié avec succès.", equipmentDTO);
+            return ResponseModel.buildResponse("200", "Équipement modifié avec succès.", equipment);
         } else {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
@@ -86,7 +86,7 @@ public class InventoryServiceImpl implements InventoryService {
 
 
     @Override
-    public ResponseModel<EquipmentDTO> removeEquipment(String userId, String equipmentId) {
+    public ResponseModel<Equipment> removeEquipment(String userId, String equipmentId) {
 
         // Supprimer l'élément (en utilisant l'equipmentId passé en paramètre).
         UpdateResult result = userRepository.removeEquipment(userId, equipmentId);
@@ -102,12 +102,12 @@ public class InventoryServiceImpl implements InventoryService {
 
 
 
-    private boolean checkEquipmentExistsById(String userId, EquipmentDTO equipmentDTO){
-        return userRepository.checkEquipmentExistsById(userId, equipmentDTO);
+    private boolean checkEquipmentExistsById(String userId, Equipment equipment){
+        return userRepository.checkEquipmentExistsById(userId, equipment);
     }
 
 
-    private boolean checkAvailableEquipmentName(String userId, EquipmentDTO equipmentDTO){
-        return userRepository.checkAvailableEquipmentName(userId, equipmentDTO);
+    private boolean checkAvailableEquipmentName(String userId, Equipment equipment){
+        return userRepository.checkAvailableEquipmentName(userId, equipment);
     }
 }

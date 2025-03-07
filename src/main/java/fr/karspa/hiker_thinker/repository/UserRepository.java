@@ -1,7 +1,8 @@
 package fr.karspa.hiker_thinker.repository;
 
 import com.mongodb.client.result.UpdateResult;
-import fr.karspa.hiker_thinker.dtos.responses.EquipmentDTO;
+import fr.karspa.hiker_thinker.model.Equipment;
+import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
@@ -20,40 +21,46 @@ public class UserRepository {
 
     private MongoTemplate mongoTemplate;
 
-    public Map<String, List<EquipmentDTO>> findInventoryByUserId(String userId) {
+    public Map<String, List<Equipment>> findInventoryByUserId(String userId) {
         Query query = new Query(Criteria.where("_id").is(userId));
-        query.fields().include("inventory").exclude("_id");
+        query.fields().include("inventory");
+        User user = mongoTemplate.findOne(query, User.class);
 
-        Document doc = mongoTemplate.findOne(query, Document.class, "users");
-        if (doc != null) {
-            Map<String, List<Document>> rawInventory = (Map<String, List<Document>>) doc.get("inventory");
-            Map<String, List<EquipmentDTO>> inventory = new HashMap<>();
-            for (Map.Entry<String, List<Document>> entry : rawInventory.entrySet()) {
-                List<EquipmentDTO> equipmentList = entry.getValue().stream()
-                        .map(document -> mongoTemplate.getConverter().read(EquipmentDTO.class, document))
-                        .collect(Collectors.toList());
-                inventory.put(entry.getKey(), equipmentList);
-            }
-            return inventory;
-
+        if (user == null || user.getInventory() == null) {
+            return Collections.emptyMap();
         }
-        return null;
+
+        Inventory inventory = user.getInventory();
+
+        // Groupement des équipements par catégorie
+        Map<String, List<Equipment>> grouped = inventory.getEquipments()
+                .stream()
+                .collect(Collectors.groupingBy(Equipment::getCategory));
+
+        // S'assurer que toutes les catégories définies (même sans équipement) apparaissent dans le résultat
+        if (inventory.getCategories() != null) {
+            for (String cat : inventory.getCategories()) {
+                grouped.putIfAbsent(cat, new ArrayList<>());
+            }
+        }
+
+        return grouped;
     }
 
 
-    public UpdateResult addEquipment(String userId, EquipmentDTO equipmentDTO) {
+    public UpdateResult addEquipment(String userId, Equipment equipment) {
         // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = equipmentDTO.getCategory();
+        String category = equipment.getCategory();
 
         //Générer un nouvel identifiant unique pour cet équipement
         String uniqueId = UUID.randomUUID().toString();
-        equipmentDTO.setId(uniqueId);
+        equipment.setId(uniqueId);
 
         // Construire la requête pour trouver l'utilisateur par son _id
         Query query = new Query(Criteria.where("_id").is(userId));
 
         // Construire l'update en utilisant l'opérateur $push sur le champ "inventory.<category>"
-        Update update = new Update().push("inventory." + category, equipmentDTO);
+        Update update = new Update().push("inventory." + category, equipment);
 
         System.err.println(update);
 
@@ -62,18 +69,18 @@ public class UserRepository {
 
     }
 
-    public UpdateResult modifyEquipment(String userId, EquipmentDTO equipmentDTO) {
+    public UpdateResult modifyEquipment(String userId, Equipment equipment) {
         // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = equipmentDTO.getCategory();
+        String category = equipment.getCategory();
 
         // Construire la query pour cibler l'utilisateur et l'équipement dans l'array de la catégorie
         Query query = new Query(
                 Criteria.where("_id").is(userId)
-                        .and("inventory." + category + "._id").is(equipmentDTO.getId())
+                        .and("inventory." + category + "._id").is(equipment.getId())
         );
 
         // Utiliser l'opérateur positional "$" pour remplacer l'équipement trouvé
-        Update update = new Update().set("inventory." + category + ".$", equipmentDTO);
+        Update update = new Update().set("inventory." + category + ".$", equipment);
 
         // Exécuter l'update sans avoir besoin d'arrayFilters
         return mongoTemplate.updateFirst(query, update, User.class);
@@ -86,32 +93,29 @@ public class UserRepository {
     }
 
 
-    public boolean checkAvailableEquipmentName(String userId, EquipmentDTO equipmentDTO) {
-        // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = equipmentDTO.getCategory();
-
+    public boolean checkAvailableEquipmentName(String userId, Equipment equipment) {
         //SI id dans l'équipement est passé c'est qu'on modifie
-        System.err.println(equipmentDTO);
-        if(equipmentDTO.getId() != null){
-            return this.checkAvailableEquipmentNameModify(userId, category, equipmentDTO);
+        System.err.println(equipment);
+        if(equipment.getId() != null){
+            return this.checkAvailableEquipmentNameModify(userId, equipment);
         }else{
-            return this.checkAvailableEquipmentNameAdd(userId, category, equipmentDTO);
+            return this.checkAvailableEquipmentNameAdd(userId,  equipment);
         }
     }
 
-    private boolean checkAvailableEquipmentNameAdd(String userId, String category, EquipmentDTO equipment) {
+    private boolean checkAvailableEquipmentNameAdd(String userId, Equipment equipment) {
         Query query = new Query(Criteria.where("_id").is(userId)
-                .and("inventory."+category+".name").is(equipment.getName()));
+                .and("inventory.equipments.name").is(equipment.getName()));
 
         Document doc = mongoTemplate.findOne(query, Document.class, "users");
 
         return (doc == null);
     }
 
-    private boolean checkAvailableEquipmentNameModify(String userId, String category, EquipmentDTO equipment) {
+    private boolean checkAvailableEquipmentNameModify(String userId, Equipment equipment) {
         Query query = new Query(
                 Criteria.where("_id").is(userId)
-                        .and("inventory." + category).elemMatch(
+                        .and("inventory.equipments").elemMatch(
                                 Criteria.where("name").is(equipment.getName())
                                         .and("_id").ne(equipment.getId())
                         ));
@@ -121,12 +125,10 @@ public class UserRepository {
         return (doc == null);
     }
 
-    public boolean checkEquipmentExistsById(String userId, EquipmentDTO equipmentDTO) {
-        // Récupérer la catégorie et l'équipement à ajouter depuis le DTO
-        String category = equipmentDTO.getCategory();
+    public boolean checkEquipmentExistsById(String userId, Equipment equipment) {
 
         Query query = new Query(Criteria.where("_id").is(userId)
-                .and("inventory."+category+"._id").is(equipmentDTO.getId()));
+                .and("inventory.equipments._id").is(equipment.getId()));
 
         // On récupère le document utilisateur avec un champ spécifique
         Document doc = mongoTemplate.findOne(query, Document.class, "users");

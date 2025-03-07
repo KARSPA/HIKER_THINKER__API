@@ -1,5 +1,6 @@
 package fr.karspa.hiker_thinker.dtos.responses;
 
+import fr.karspa.hiker_thinker.model.Equipment;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,5 +13,5 @@ import java.util.Map;
 @NoArgsConstructor
 public class InventoryDTO {
 
-    private Map<String, List<EquipmentDTO>> equipments;
+    private Map<String, List<Equipment>> equipments;
 }

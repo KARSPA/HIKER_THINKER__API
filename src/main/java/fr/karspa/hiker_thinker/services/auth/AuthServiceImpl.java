@@ -4,6 +4,7 @@ import fr.karspa.hiker_thinker.dtos.LoginDTO;
 import fr.karspa.hiker_thinker.dtos.RegisterDTO;
 import fr.karspa.hiker_thinker.dtos.responses.LoginResponseDTO;
 import fr.karspa.hiker_thinker.dtos.responses.RegisterResponseDTO;
+import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
 import fr.karspa.hiker_thinker.model.Equipment;
@@ -62,6 +63,8 @@ public class AuthServiceImpl implements AuthService {
 
         //TODO : VALIDATION DU DTO ??
 
+        EquipmentCategory defaultCat = new EquipmentCategory("DEFAULT", "Sans catégorie", "no_icon");
+
         User user = User.builder()
             .email(registerDTO.getEmail())
             .password(passwordEncoder.encode(registerDTO.getPassword()))
@@ -69,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
             .lastName(registerDTO.getLastName())
             .roles(List.of("ROLE_USER"))
             .active(true)
-            .inventory(new Inventory(new ArrayList<>(), new ArrayList<>()))
+            .inventory(new Inventory(List.of(defaultCat), new ArrayList<>()))
             .build();
 
 

@@ -1,5 +1,7 @@
 package fr.karspa.hiker_thinker.repository;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
@@ -8,7 +10,7 @@ import fr.karspa.hiker_thinker.model.User;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -124,6 +126,18 @@ public class InventoryRepository {
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 
+    public UpdateResult removeCategoryInCategoryList(String userId, String categoryId) {
+
+        Query query = new Query(Criteria.where("_id").is(userId));
+
+        Update update = new Update().pull("inventory.categories", new Document("_id", categoryId));
+
+        System.err.println(categoryId);
+        System.err.println(update);
+
+        return mongoTemplate.updateFirst(query, update, User.class);
+    }
+
 
     public boolean checkAvailableEquipmentName(String userId, Equipment equipment) {
 
@@ -191,6 +205,50 @@ public class InventoryRepository {
         Document doc = mongoTemplate.findOne(query, Document.class, "users");
 
         return (doc != null);
+    }
+
+    public List<Equipment> findEquipmentsByCategory(String userId, String categoryId){
+
+        Query query = new Query(Criteria.where("_id").is(userId));
+        query.fields().include("inventory.equipments");
+
+        User user = mongoTemplate.findOne(query, User.class);
+        if (user == null || user.getInventory() == null || user.getInventory().getEquipments() == null) {
+            return Collections.emptyList();
+        }
+
+        return user.getInventory().getEquipments().stream()
+                .filter(e -> categoryId.equals(e.getCategoryId()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Equipment> findEquipmentsByCategoryBIS(String userId, String categoryId){
+        // Pipeline d'agrégation :
+        Aggregation aggregation = Aggregation.newAggregation(
+                // Filtrer par utilisateur
+                Aggregation.match(Criteria.where("_id").is(userId)),
+                // Dans le $project, utiliser $filter pour ne garder que les équipements dont le categoryId correspond
+                Aggregation.project()
+                        .and(ArrayOperators.Filter.filter("inventory.equipments")
+                                        .as("equipment")
+                                        .by(ComparisonOperators.Eq.valueOf("$$equipment.categoryId").equalToValue(categoryId))
+                        ).as("filteredEquipments")
+        );
+
+        AggregationResults<Document> results = mongoTemplate.aggregate(aggregation, "users", Document.class);
+        Document resultDoc = results.getUniqueMappedResult();
+        if (resultDoc == null) {
+            return Collections.emptyList();
+        }
+
+        List<Document> equipmentsDocs = (List<Document>) resultDoc.get("filteredEquipments");
+        List<Equipment> equipments = new ArrayList<>();
+        for (Document doc : equipmentsDocs) {
+            // Utilise le convertisseur de mongoTemplate pour mapper le Document vers Equipment
+            Equipment eq = mongoTemplate.getConverter().read(Equipment.class, doc);
+            equipments.add(eq);
+        }
+        return equipments;
     }
 
 

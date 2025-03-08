@@ -26,4 +26,6 @@ public interface InventoryService {
 
     ResponseModel<EquipmentCategory> modifyCategory(String userId, EquipmentCategory category);
 
+    ResponseModel<EquipmentCategory> removeCategory(String userId, String categoryId);
+
 }

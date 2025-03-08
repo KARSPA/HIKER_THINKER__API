@@ -117,4 +117,17 @@ public class InventoryController {
         }
     }
 
+    @DeleteMapping("/categories/remove")
+    public ResponseEntity<ResponseModel<EquipmentCategory>> removeCategory(@RequestParam(name = "id") String categoryId){
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<EquipmentCategory> response = inventoryService.removeCategory(userId, categoryId);
+
+        if(response.getCode().equals("204")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
 }

@@ -1,5 +1,7 @@
 package fr.karspa.hiker_thinker.services.impl;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
@@ -9,9 +11,11 @@ import fr.karspa.hiker_thinker.repository.InventoryRepository;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.RandomGenerator;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
+import org.bson.Document;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -177,6 +181,35 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    public ResponseModel<EquipmentCategory> removeCategory(String userId, String categoryId){
+        System.err.println(categoryId);
+
+        //Vérifier si id = "DEFAULT" (pas supprimable dans ce cas)
+        if (Objects.equals(categoryId, "DEFAULT")){
+            return ResponseModel.buildResponse("403", "Bien tenté mais pas autorisé.", null);
+        }
+
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsById(userId,categoryId);
+        if(!doesCategoryExist){
+            return ResponseModel.buildResponse("404", "La catégorie à supprimer n'existe pas dans l'inventaire.", null);
+        }
+
+        UpdateResult removeCatResult = inventoryRepository.removeCategoryInCategoryList(userId, categoryId);
+
+        //Récupérer tous les équipements avec cette catégorie
+        List<Equipment> equipmentsToReset = inventoryRepository.findEquipmentsByCategory(userId, categoryId);
+
+        //Reset la catégorie et sauvegarder en bdd
+        this.resetEquipmentsCategory(userId, equipmentsToReset);
+
+        if (removeCatResult.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("204", "Catégorie supprimée et équipements mis à jour avec succès.", null);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur lors de la suppression de la catégorie.", null);
+        }
+    }
+
+    @Override
     public ResponseModel<List<EquipmentCategory>> getCategories(String userId) {
         //Récupérer l'inventaire dans la BDD
         var categories = inventoryRepository.getCategories(userId);
@@ -197,5 +230,13 @@ public class InventoryServiceImpl implements InventoryService {
 
     private boolean checkAvailableEquipmentName(String userId, Equipment equipment){
         return inventoryRepository.checkAvailableEquipmentName(userId, equipment);
+    }
+
+
+    private void resetEquipmentsCategory(String userId, List<Equipment> equipments){
+        for(Equipment equipment : equipments){
+            equipment.setCategoryId("DEFAULT");
+            inventoryRepository.modifyEquipment(userId, equipment);
+        }
     }
 }

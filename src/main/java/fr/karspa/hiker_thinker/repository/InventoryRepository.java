@@ -112,6 +112,18 @@ public class InventoryRepository {
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 
+    public UpdateResult modifyCategoryInCategoryList(String userId, EquipmentCategory category) {
+
+        Query query = new Query(
+                Criteria.where("_id").is(userId)
+                        .and("inventory.categories._id").is(category.getId())
+        );
+
+        Update update = new Update().set("inventory.categories.$", category);
+
+        return mongoTemplate.updateFirst(query, update, User.class);
+    }
+
 
     public boolean checkAvailableEquipmentName(String userId, Equipment equipment) {
 

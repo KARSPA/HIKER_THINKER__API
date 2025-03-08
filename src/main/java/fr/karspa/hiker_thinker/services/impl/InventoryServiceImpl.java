@@ -146,7 +146,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, category.getName());
         if(doesCategoryExist){
-            return ResponseModel.buildResponse("400", "La catégorie existe déjà dans l'inventaire.", null);
+            return ResponseModel.buildResponse("409", "La catégorie existe déjà dans l'inventaire.", null);
         }
 
         category.setId(RandomGenerator.generateRandomString());
@@ -154,6 +154,23 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("201", "Catégorie créée avec succès.", category);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
+    }
+
+    @Override
+    public ResponseModel<EquipmentCategory> modifyCategory(String userId, EquipmentCategory category){
+
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsById(userId, category.getId());
+        if(!doesCategoryExist){
+            return ResponseModel.buildResponse("404", "La catégorie à modifier n'existe pas dans l'inventaire.", null);
+        }
+
+        UpdateResult result = inventoryRepository.modifyCategoryInCategoryList(userId, category);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Catégorie modifiée avec succès.", category);
         } else {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }

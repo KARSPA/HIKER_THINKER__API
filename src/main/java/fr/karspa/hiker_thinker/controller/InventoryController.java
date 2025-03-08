@@ -90,6 +90,7 @@ public class InventoryController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
     @PostMapping("/categories/add")
     public ResponseEntity<ResponseModel<EquipmentCategory>> addCategory(@RequestBody EquipmentCategory category){
         String userId = tokenUtils.retreiveUserId();
@@ -97,6 +98,19 @@ public class InventoryController {
         ResponseModel<EquipmentCategory> response = inventoryService.addCategory(userId, category);
 
         if(response.getCode().equals("201")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @PatchMapping("/categories/modify")
+    public ResponseEntity<ResponseModel<EquipmentCategory>> modifyCategory(@RequestBody EquipmentCategory category){
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<EquipmentCategory> response = inventoryService.modifyCategory(userId, category);
+
+        if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

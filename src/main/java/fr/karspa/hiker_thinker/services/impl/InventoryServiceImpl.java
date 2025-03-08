@@ -101,10 +101,8 @@ public class InventoryServiceImpl implements InventoryService {
         boolean doesIdExists = this.checkEquipmentExistsById(userId, equipment);
 
         if(!doesIdExists){
-            return ResponseModel.buildResponse("404", "Aucun équipement avec cet identifiant n'existe pour cette catégorie.", null);
+            return ResponseModel.buildResponse("404", "Aucun équipement avec cet identifiant n'existe dans votre inventaire.", null);
         }
-
-        //TODO : => VALIDER LES DONNÉES EN ENTRÉE ET S'ASSURER QU'IL Y AI BIEN UN ID.
 
         //On appelle la même méthode que pour l'ajout mais les requêtes de vérifications ne sont pas les mêmes si un id à l'équipement est passé ou non.
         boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipment);

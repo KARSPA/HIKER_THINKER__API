@@ -27,6 +27,12 @@ public class HikeRepository {
         return mongoTemplate.find(query, Hike.class);
     }
 
+    public Hike findOne(String ownerId, String hikeId){
+        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
+
+        return mongoTemplate.findOne(query, Hike.class);
+    }
+
     public Hike createOneHike(Hike hike){
         return mongoTemplate.insert(hike);
     }
@@ -41,7 +47,6 @@ public class HikeRepository {
 
         Document doc = mongoTemplate.findOne(query, Document.class, "hikes");
 
-        System.err.println(doc);
         return (doc == null);
     }
 

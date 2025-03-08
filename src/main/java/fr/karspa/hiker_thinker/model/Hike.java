@@ -1,5 +1,7 @@
 package fr.karspa.hiker_thinker.model;
 
+import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
+import fr.karspa.hiker_thinker.utils.InventoryUtils;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
@@ -34,4 +36,20 @@ public class Hike {
 
     private String ownerId;
     private String modelId;
+
+
+    public HikeResponseDTO toDTO() {
+        return HikeResponseDTO.builder()
+                .id(id)
+                .title(title)
+                .distance(distance)
+                .positive(positive)
+                .negative(negative)
+                .weightCorrection(weightCorrection)
+                .duration(duration)
+                .durationUnit(durationUnit)
+                .date(date)
+                .inventory(InventoryUtils.restructureInventory(inventory))
+                .build();
+    }
 }

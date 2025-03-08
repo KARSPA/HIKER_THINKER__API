@@ -1,6 +1,7 @@
 package fr.karspa.hiker_thinker.services;
 
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Hike;
@@ -11,7 +12,7 @@ import java.util.List;
 public interface HikeService {
 
     ResponseModel<List<Hike>> findAll(String ownerId, boolean withInventory);
-    ResponseModel<Hike> findByHikeId(String ownerId, String hikeId);
+    ResponseModel<HikeResponseDTO> findByHikeId(String ownerId, String hikeId);
     ResponseModel<Hike> createOne(String ownerId, Hike hike);
     ResponseModel<Hike> modifyOne(String ownerId, Hike hike);
     ResponseModel<Hike> deleteOne(String ownerId, Hike hike);

@@ -30,10 +30,8 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public ResponseModel<InventoryDTO> findByUserId(String userId) {
 
-        //Récupérer l'inventaire dans la BDD
         var inventory = inventoryRepository.getInventory(userId);
 
-        //Check si null
         if(inventory == null)
             return ResponseModel.buildResponse("710", "Aucun inventaire disponible.", null);
 

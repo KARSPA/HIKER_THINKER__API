@@ -7,6 +7,7 @@ import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
+import fr.karspa.hiker_thinker.utils.InventoryUtils;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -34,23 +35,7 @@ public class InventoryRepository {
             return Collections.emptyMap();
         }
 
-        Inventory inventory = user.getInventory();
-
-        // Créer une map de correspondance : id -> nom de la catégorie
-        Map<String, String> catIdToName = inventory.getCategories().stream()
-                .collect(Collectors.toMap(EquipmentCategory::getId, EquipmentCategory::getName));
-
-        // Groupement des équipements en utilisant le nom de la catégorie
-        Map<String, List<Equipment>> grouped = inventory.getEquipments().stream()
-                .collect(Collectors.groupingBy(equipment ->
-                        catIdToName.getOrDefault(equipment.getCategoryId(), equipment.getCategoryId())));
-
-        // S'assurer que toutes les catégories définies (même sans équipement) apparaissent dans le résultat
-        for (EquipmentCategory cat : inventory.getCategories()) {
-            grouped.putIfAbsent(cat.getName(), new ArrayList<>());
-        }
-
-        return grouped;
+        return InventoryUtils.restructureInventory(user.getInventory()).getEquipments();
     }
 
 

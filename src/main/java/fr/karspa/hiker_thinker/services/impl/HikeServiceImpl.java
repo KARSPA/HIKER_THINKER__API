@@ -2,18 +2,24 @@ package fr.karspa.hiker_thinker.services.impl;
 
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
+import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Hike;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.repository.HikeRepository;
 import fr.karspa.hiker_thinker.services.HikeService;
+import fr.karspa.hiker_thinker.utils.InventoryUtils;
 import fr.karspa.hiker_thinker.utils.RandomGenerator;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -31,8 +37,11 @@ public class HikeServiceImpl implements HikeService {
     }
 
     @Override
-    public ResponseModel<Hike> findByHikeId(String ownerId, String hikeId) {
-        return null;
+    public ResponseModel<HikeResponseDTO> findByHikeId(String ownerId, String hikeId) {
+        Hike hike = hikeRepository.findOne(ownerId, hikeId);
+
+        //Modifier la structure de l'inventaire pour faciliter l'affichage coté front
+        return ResponseModel.buildResponse("200", "Randonnée récupérée avec succès", hike.toDTO());
     }
 
     @Override
@@ -63,6 +72,12 @@ public class HikeServiceImpl implements HikeService {
 
     @Override
     public ResponseModel<Hike> modifyOne(String ownerId, Hike hike) {
+
+        // Vérifier que la randonnée avec l'identifiant existe pour cet utilisateur
+
+        // Vérifier que le titre est disponible (sans compter celle-ci évidemment ...)
+
+
         return null;
     }
 
@@ -105,9 +120,6 @@ public class HikeServiceImpl implements HikeService {
     public ResponseModel<EquipmentCategory> removeCategory(String userId, String categoryId) {
         return null;
     }
-
-
-
 
 
     private boolean checkHikeTitleAvailable(String ownerId, String hikeTitle) {

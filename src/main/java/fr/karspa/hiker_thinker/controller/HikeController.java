@@ -1,5 +1,6 @@
 package fr.karspa.hiker_thinker.controller;
 
+import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Hike;
 import fr.karspa.hiker_thinker.services.HikeService;
@@ -35,6 +36,20 @@ public class HikeController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
+    @GetMapping("/{hikeId}")
+    public ResponseEntity<ResponseModel<HikeResponseDTO>> getHike(@PathVariable String hikeId) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<HikeResponseDTO> response = hikeService.findByHikeId(userId, hikeId);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
 
 
     @PostMapping("")

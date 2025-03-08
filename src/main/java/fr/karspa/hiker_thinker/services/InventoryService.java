@@ -7,6 +7,8 @@ import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public interface InventoryService {
 
@@ -17,6 +19,8 @@ public interface InventoryService {
     ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment); // Modifier un équipement de l'inventaire
 
     ResponseModel<Equipment> removeEquipment(String userId, String equipmentId); // Supprimer un équipement de l'inventaire
+
+    ResponseModel<List<EquipmentCategory>> getCategories(String userId);
 
     ResponseModel<EquipmentCategory> addCategory(String userId, EquipmentCategory category);
 

@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/inventory")
 public class InventoryController {
@@ -36,7 +38,7 @@ public class InventoryController {
         }
     }
 
-    @PostMapping("/equipment/add")
+    @PostMapping("/equipments/add")
     public ResponseEntity<ResponseModel<Equipment>> addEquipment(@RequestBody EquipmentDTO equipmentDTO){
         String userId = tokenUtils.retreiveUserId();
 
@@ -49,7 +51,7 @@ public class InventoryController {
         }
     }
 
-    @PatchMapping("/equipment/modify")
+    @PatchMapping("/equipments/modify")
     public ResponseEntity<ResponseModel<Equipment>> modifyEquipment(@RequestBody Equipment equipment){
         String userId = tokenUtils.retreiveUserId();
 
@@ -62,7 +64,7 @@ public class InventoryController {
         }
     }
 
-    @DeleteMapping("/equipment/remove")
+    @DeleteMapping("/equipments/remove")
     public ResponseEntity<ResponseModel<Equipment>> removeEquipment(@RequestParam(name = "id") String equipmentId){
         String userId = tokenUtils.retreiveUserId();
 
@@ -76,7 +78,19 @@ public class InventoryController {
     }
 
 
-    @PostMapping("/category/add")
+    @GetMapping("/categories")
+    public ResponseEntity<ResponseModel<List<EquipmentCategory>>> getCategories(){
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<List<EquipmentCategory>> response = inventoryService.getCategories(userId);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    @PostMapping("/categories/add")
     public ResponseEntity<ResponseModel<EquipmentCategory>> addCategory(@RequestBody EquipmentCategory category){
         String userId = tokenUtils.retreiveUserId();
 

@@ -11,6 +11,7 @@ import fr.karspa.hiker_thinker.utils.RandomGenerator;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -32,8 +33,6 @@ public class InventoryServiceImpl implements InventoryService {
         if(inventory == null)
             return ResponseModel.buildResponse("710", "Aucun inventaire disponible.", null);
 
-
-        // => Grouper les équipements par catégories et retourner le tableau associatif généré.
         InventoryDTO inventoryDTO = new InventoryDTO();
         inventoryDTO.setEquipments(inventory);
 
@@ -150,6 +149,7 @@ public class InventoryServiceImpl implements InventoryService {
             return ResponseModel.buildResponse("400", "La catégorie existe déjà dans l'inventaire.", null);
         }
 
+        category.setId(RandomGenerator.generateRandomString());
         UpdateResult result = inventoryRepository.addCategoryToCategoryList(userId, category);
 
         if (result.getMatchedCount() > 0) {
@@ -157,6 +157,19 @@ public class InventoryServiceImpl implements InventoryService {
         } else {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
+    }
+
+    @Override
+    public ResponseModel<List<EquipmentCategory>> getCategories(String userId) {
+        //Récupérer l'inventaire dans la BDD
+        var categories = inventoryRepository.getCategories(userId);
+
+        //Check si null
+        if(categories.isEmpty())
+            return ResponseModel.buildResponse("710", "Aucune catégories disponibles.", null);
+
+
+        return ResponseModel.buildResponse("200", "Catégories récupérées avec succès.", categories);
     }
 
 

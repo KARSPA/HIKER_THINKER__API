@@ -8,6 +8,7 @@ import fr.karspa.hiker_thinker.model.User;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -89,6 +90,19 @@ public class InventoryRepository {
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 
+
+    public List<EquipmentCategory> getCategories(String userId) {
+        Query query = new Query(Criteria.where("_id").is(userId));
+        query.fields().include("inventory.categories");
+
+        User user = mongoTemplate.findOne(query, User.class);
+        if(user == null || user.getInventory() == null) {
+            return Collections.emptyList();
+        }
+        return user.getInventory().getCategories();
+    }
+
+
     public UpdateResult addCategoryToCategoryList(String userId, EquipmentCategory category) {
 
         Query query = new Query(Criteria.where("_id").is(userId));
@@ -98,20 +112,6 @@ public class InventoryRepository {
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 
-//    public UpdateResult modifyCategory(String userId, String category) {
-//
-//
-//        //Modifier le nom de la catégorie
-//
-//
-//        //Modifier le nom de la catégorie de chaque équipement avec l'ancien nom.
-//
-//        Query query = new Query(Criteria.where("_id").is(userId));
-//
-//        Update update = new Update().push("inventory.categories", category);
-//
-//        return mongoTemplate.updateFirst(query, update, User.class);
-//    }
 
     public boolean checkAvailableEquipmentName(String userId, Equipment equipment) {
 

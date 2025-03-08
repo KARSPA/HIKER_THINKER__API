@@ -2,6 +2,7 @@ package fr.karspa.hiker_thinker.repository;
 
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.model.Equipment;
+import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
 import org.bson.Document;
@@ -32,16 +33,18 @@ public class InventoryRepository {
 
         Inventory inventory = user.getInventory();
 
-        // Groupement des équipements par catégorie
-        Map<String, List<Equipment>> grouped = inventory.getEquipments()
-                .stream()
-                .collect(Collectors.groupingBy(Equipment::getCategory));
+        // Créer une map de correspondance : id -> nom de la catégorie
+        Map<String, String> catIdToName = inventory.getCategories().stream()
+                .collect(Collectors.toMap(EquipmentCategory::getId, EquipmentCategory::getName));
+
+        // Groupement des équipements en utilisant le nom de la catégorie
+        Map<String, List<Equipment>> grouped = inventory.getEquipments().stream()
+                .collect(Collectors.groupingBy(equipment ->
+                        catIdToName.getOrDefault(equipment.getCategoryId(), equipment.getCategoryId())));
 
         // S'assurer que toutes les catégories définies (même sans équipement) apparaissent dans le résultat
-        if (inventory.getCategories() != null) {
-            for (String cat : inventory.getCategories()) {
-                grouped.putIfAbsent(cat, new ArrayList<>());
-            }
+        for (EquipmentCategory cat : inventory.getCategories()) {
+            grouped.putIfAbsent(cat.getName(), new ArrayList<>());
         }
 
         return grouped;
@@ -86,7 +89,7 @@ public class InventoryRepository {
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 
-    public UpdateResult addCategoryToCategoryList(String userId, String category) {
+    public UpdateResult addCategoryToCategoryList(String userId, EquipmentCategory category) {
 
         Query query = new Query(Criteria.where("_id").is(userId));
 
@@ -94,6 +97,21 @@ public class InventoryRepository {
 
         return mongoTemplate.updateFirst(query, update, User.class);
     }
+
+//    public UpdateResult modifyCategory(String userId, String category) {
+//
+//
+//        //Modifier le nom de la catégorie
+//
+//
+//        //Modifier le nom de la catégorie de chaque équipement avec l'ancien nom.
+//
+//        Query query = new Query(Criteria.where("_id").is(userId));
+//
+//        Update update = new Update().push("inventory.categories", category);
+//
+//        return mongoTemplate.updateFirst(query, update, User.class);
+//    }
 
     public boolean checkAvailableEquipmentName(String userId, Equipment equipment) {
 
@@ -141,7 +159,9 @@ public class InventoryRepository {
 
         Query query = new Query(
                 Criteria.where("_id").is(userId)
-                        .and("inventory.categories").is(category));
+                        .and("inventory.categories").elemMatch(
+                                Criteria.where("name").is(category)
+                        ));
 
         Document doc = mongoTemplate.findOne(query, Document.class, "users");
 

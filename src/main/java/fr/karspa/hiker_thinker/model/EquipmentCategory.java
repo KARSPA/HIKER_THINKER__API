@@ -5,16 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class Inventory {
+@NoArgsConstructor
+public class EquipmentCategory {
 
-    private List<EquipmentCategory> categories;
+    private String id;
 
-    private List<Equipment> equipments;
+    private String name;
 
+    private String icon;
 }

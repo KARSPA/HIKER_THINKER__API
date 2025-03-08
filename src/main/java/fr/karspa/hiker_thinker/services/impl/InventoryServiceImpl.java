@@ -1,8 +1,10 @@
 package fr.karspa.hiker_thinker.services.impl;
 
 import com.mongodb.client.result.UpdateResult;
+import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
+import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.repository.InventoryRepository;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
@@ -38,7 +40,12 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public ResponseModel<Equipment> addEquipment(String userId, Equipment equipment) {
+    public ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO) {
+
+        // Créer les instance nécessaires aux vérifications et enregistrement.
+        Equipment equipment = equipmentDTO.mapToEntity();
+        String categoryName = equipmentDTO.getCategoryName();
+
 
         //Vérifier l'unicité du name avant d'enregistrer
         boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipment);
@@ -51,11 +58,22 @@ public class InventoryServiceImpl implements InventoryService {
         String uniqueId = UUID.randomUUID().toString();
         equipment.setId(uniqueId);
 
-        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, equipment.getCategory());
+
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, categoryName);
 
         // Si la catégorie n'existe pas, l'ajouter dans la liste des catégories de l'inventaire
         if (!doesCategoryExist) {
-            UpdateResult resultCat = inventoryRepository.addCategoryToCategoryList(userId, equipment.getCategory());
+
+            String categoryId = UUID.randomUUID().toString();
+            EquipmentCategory newCategory = new EquipmentCategory();
+            newCategory.setId(categoryId);
+            newCategory.setName(categoryName);
+            // icon null et on affichera un truc générique
+
+            // Ne pas oublier d'ajouter la référence à la nouvelle catégorie dans l'équipement.
+            equipment.setCategoryId(categoryId);
+
+            UpdateResult resultCat = inventoryRepository.addCategoryToCategoryList(userId, newCategory);
             // Si aucune catégorie n'a été ajoutée, retourner une erreur
             if (resultCat.getModifiedCount() == 0) {
                 return ResponseModel.buildResponse("500", "Échec de l'ajout de la catégorie.", null);
@@ -91,7 +109,7 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         // Vérifier que la nouvelle catégorie existe bien dans inventory.categories
-        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, equipment.getCategory());
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, equipment.getCategoryId());
         if(!doesCategoryExist){
             return ResponseModel.buildResponse("400", "La catégorie de l'équipement n'existe pas dans votre inventaire. Veuillez la créée avant.", null);
         }
@@ -108,7 +126,6 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
 
-
     @Override
     public ResponseModel<Equipment> removeEquipment(String userId, String equipmentId) {
 
@@ -123,10 +140,10 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
 
+    @Override
+    public ResponseModel<EquipmentCategory> addCategory(String userId, EquipmentCategory category){
 
-    public ResponseModel<String> addCategory(String userId, String category){
-
-        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, category);
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, category.getName());
         if(doesCategoryExist){
             return ResponseModel.buildResponse("400", "La catégorie existe déjà dans l'inventaire.", null);
         }

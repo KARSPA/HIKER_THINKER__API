@@ -1,7 +1,9 @@
 package fr.karspa.hiker_thinker.controller;
 
+import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
+import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import fr.karspa.hiker_thinker.utils.TokenUtils;
@@ -35,10 +37,10 @@ public class InventoryController {
     }
 
     @PostMapping("/equipment/add")
-    public ResponseEntity<ResponseModel<Equipment>> addEquipment(@RequestBody Equipment equipment){
+    public ResponseEntity<ResponseModel<Equipment>> addEquipment(@RequestBody EquipmentDTO equipmentDTO){
         String userId = tokenUtils.retreiveUserId();
 
-        ResponseModel<Equipment> response = inventoryService.addEquipment(userId, equipment);
+        ResponseModel<Equipment> response = inventoryService.addEquipment(userId, equipmentDTO);
 
         if(response.getCode().equals("201")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -75,10 +77,10 @@ public class InventoryController {
 
 
     @PostMapping("/category/add")
-    public ResponseEntity<ResponseModel<String>> addCategory(@RequestParam(name = "name") String categoryName){
+    public ResponseEntity<ResponseModel<EquipmentCategory>> addCategory(@RequestBody EquipmentCategory category){
         String userId = tokenUtils.retreiveUserId();
 
-        ResponseModel<String> response = inventoryService.addCategory(userId, categoryName);
+        ResponseModel<EquipmentCategory> response = inventoryService.addCategory(userId, category);
 
         if(response.getCode().equals("201")){
             return ResponseEntity.status(HttpStatus.OK).body(response);

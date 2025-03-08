@@ -182,7 +182,6 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<EquipmentCategory> removeCategory(String userId, String categoryId){
-        System.err.println(categoryId);
 
         //Vérifier si id = "DEFAULT" (pas supprimable dans ce cas)
         if (Objects.equals(categoryId, "DEFAULT")){

@@ -132,9 +132,6 @@ public class InventoryRepository {
 
         Update update = new Update().pull("inventory.categories", new Document("_id", categoryId));
 
-        System.err.println(categoryId);
-        System.err.println(update);
-
         return mongoTemplate.updateFirst(query, update, User.class);
     }
 

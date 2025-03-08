@@ -169,4 +169,41 @@ public class InventoryRepository {
     }
 
 
+    public String getCategoryIdByCategoryName(String userId, String categoryName) {
+        Query query = new Query(
+                Criteria.where("_id").is(userId)
+                        .and("inventory.categories").elemMatch(
+                                Criteria.where("name").is(categoryName)));
+        query.fields().include("inventory.categories");
+
+        Document doc = mongoTemplate.findOne(query, Document.class, "users");
+        if (doc == null) {
+            return null; // Aucun utilisateur trouvé, ou pas d'inventaire
+        }
+
+        // Récupérer l'inventaire depuis le document
+        Document inventoryDoc = (Document) doc.get("inventory");
+        if (inventoryDoc == null) {
+            return null;
+        }
+
+        // La liste des catégories est supposée être stockée sous forme de List<Document>
+        List<Document> categories = (List<Document>) inventoryDoc.get("categories");
+        if (categories == null) {
+            return null;
+        }
+
+        // Parcourir la liste pour trouver la catégorie dont le "name" correspond
+        for (Document catDoc : categories) {
+            String name = catDoc.getString("name");
+            if (categoryName.equals(name)) {
+                // On suppose que l'identifiant est stocké sous la clé "_id"
+                return catDoc.getString("_id");
+            }
+        }
+
+        return null;
+    }
+
+
 }

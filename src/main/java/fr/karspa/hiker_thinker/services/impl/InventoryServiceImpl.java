@@ -7,6 +7,7 @@ import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.repository.InventoryRepository;
 import fr.karspa.hiker_thinker.services.InventoryService;
+import fr.karspa.hiker_thinker.utils.RandomGenerator;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import org.springframework.stereotype.Service;
 
@@ -58,26 +59,29 @@ public class InventoryServiceImpl implements InventoryService {
         String uniqueId = UUID.randomUUID().toString();
         equipment.setId(uniqueId);
 
-
-        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, categoryName);
+        //On récupère l'identifiant de la catégorie avec ce nom e ton agit en fonction.
+        String categoryId = inventoryRepository.getCategoryIdByCategoryName(userId, categoryName);
 
         // Si la catégorie n'existe pas, l'ajouter dans la liste des catégories de l'inventaire
-        if (!doesCategoryExist) {
+        if (categoryId == null) {
 
-            String categoryId = UUID.randomUUID().toString();
+            String newCategoryId = RandomGenerator.generateRandomString();
             EquipmentCategory newCategory = new EquipmentCategory();
-            newCategory.setId(categoryId);
+            newCategory.setId(newCategoryId);
             newCategory.setName(categoryName);
             // icon null et on affichera un truc générique
 
             // Ne pas oublier d'ajouter la référence à la nouvelle catégorie dans l'équipement.
-            equipment.setCategoryId(categoryId);
+            equipment.setCategoryId(newCategoryId);
 
             UpdateResult resultCat = inventoryRepository.addCategoryToCategoryList(userId, newCategory);
             // Si aucune catégorie n'a été ajoutée, retourner une erreur
             if (resultCat.getModifiedCount() == 0) {
                 return ResponseModel.buildResponse("500", "Échec de l'ajout de la catégorie.", null);
             }
+        }else{
+            //Si on est là c'est que la catégorie existe, on doit donc ajouter la référence de categoryId dans l'équipement
+            equipment.setCategoryId(categoryId);
         }
 
         // Ajouter l'équipement à la liste des équipements de l'inventaire

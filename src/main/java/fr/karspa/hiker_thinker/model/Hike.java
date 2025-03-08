@@ -7,8 +7,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
@@ -20,16 +18,20 @@ public class Hike {
     private String id;
 
     private String title;
+
     private float distance;
     private int positive;
     private int negative;
+
+    private int weightCorrection;
 
     private int duration;
     private String durationUnit;
 
     private Date date;
 
-    private Map<String, List<Equipment>> equipments;
+    private Inventory inventory;
 
     private String ownerId;
+    private String modelId;
 }

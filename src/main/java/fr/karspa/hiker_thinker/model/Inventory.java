@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -16,5 +17,14 @@ public class Inventory {
     private List<EquipmentCategory> categories;
 
     private List<Equipment> equipments;
+
+
+    public static Inventory getDefaultInventory(){
+
+        EquipmentCategory defaultCat = new EquipmentCategory("DEFAULT", "Sans catégorie", "no_icon");
+
+        return new Inventory(List.of(defaultCat), new ArrayList<>());
+
+    }
 
 }

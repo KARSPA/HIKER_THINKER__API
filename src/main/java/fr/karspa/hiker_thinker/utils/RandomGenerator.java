@@ -3,6 +3,7 @@ package fr.karspa.hiker_thinker.utils;
 import org.springframework.stereotype.Component;
 
 import java.util.Random;
+import java.util.UUID;
 
 @Component
 public class RandomGenerator {
@@ -26,5 +27,17 @@ public class RandomGenerator {
 
     public static String generateRandomString() {
         return generateRandomString(10, false);
+    }
+
+    public static String generateRandomStringWithPrefix(String prefix, int length){
+        return prefix + "_" + generateRandomString(length);
+    }
+    public static String generateRandomStringWithPrefix(String prefix){
+        return prefix + "_" +  generateRandomString();
+    }
+
+
+    public static String generateUUIDWithPrefix(String prefix){
+        return prefix + "_" + UUID.randomUUID().toString();
     }
 }

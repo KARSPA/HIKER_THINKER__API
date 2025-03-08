@@ -59,7 +59,7 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         //Générer un nouvel identifiant unique pour cet équipement
-        String uniqueId = UUID.randomUUID().toString();
+        String uniqueId = RandomGenerator.generateUUIDWithPrefix("equip");
         equipment.setId(uniqueId);
 
         //On récupère l'identifiant de la catégorie avec ce nom e ton agit en fonction.
@@ -68,7 +68,7 @@ public class InventoryServiceImpl implements InventoryService {
         // Si la catégorie n'existe pas, l'ajouter dans la liste des catégories de l'inventaire
         if (categoryId == null) {
 
-            String newCategoryId = RandomGenerator.generateRandomString();
+            String newCategoryId = RandomGenerator.generateRandomStringWithPrefix("cat");
             EquipmentCategory newCategory = new EquipmentCategory();
             newCategory.setId(newCategoryId);
             newCategory.setName(categoryName);

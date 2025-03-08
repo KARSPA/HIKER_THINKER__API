@@ -168,6 +168,19 @@ public class InventoryRepository {
         return (doc != null);
     }
 
+    public boolean checkCategoryExistsById(String userId, String categoryId) {
+
+        Query query = new Query(
+                Criteria.where("_id").is(userId)
+                        .and("inventory.categories").elemMatch(
+                                Criteria.where("_id").is(categoryId)
+                        ));
+
+        Document doc = mongoTemplate.findOne(query, Document.class, "users");
+
+        return (doc != null);
+    }
+
 
     public String getCategoryIdByCategoryName(String userId, String categoryName) {
         Query query = new Query(

@@ -113,7 +113,7 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         // Vérifier que la nouvelle catégorie existe bien dans inventory.categories
-        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, equipment.getCategoryId());
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsById(userId, equipment.getCategoryId());
         if(!doesCategoryExist){
             return ResponseModel.buildResponse("400", "La catégorie de l'équipement n'existe pas dans votre inventaire. Veuillez la créée avant.", null);
         }

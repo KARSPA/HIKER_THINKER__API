@@ -1,6 +1,8 @@
 package fr.karspa.hiker_thinker.controller;
 
+import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
+import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Hike;
 import fr.karspa.hiker_thinker.services.HikeService;
@@ -85,6 +87,19 @@ public class HikeController {
         ResponseModel<Hike> response = hikeService.deleteOne(userId, hikeId);
 
         if(response.getCode().equals("204")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @PostMapping("/{hikeId}/equipments")
+    public ResponseEntity<ResponseModel<Equipment>> addEquipmentToHike(@PathVariable String hikeId, @RequestBody EquipmentDTO equipmentDTO) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<Equipment> response = hikeService.addEquipment(userId, hikeId, equipmentDTO);
+
+        if(response.getCode().equals("201")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

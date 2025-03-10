@@ -18,19 +18,19 @@ public interface HikeService {
 
     ResponseModel<Hike> deleteOne(String ownerId, String hikeId);
 
-    ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO); // Ajouter un équipement à la randonnée
+    ResponseModel<Equipment> addEquipment(String userId, String hikeId, EquipmentDTO equipmentDTO); // Ajouter un équipement à la randonnée
 
-    ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment); // Modifier un équipement de la randonnée
+    ResponseModel<Equipment> modifyEquipment(String userId, String hikeId, Equipment equipment); // Modifier un équipement de la randonnée
 
-    ResponseModel<Equipment> removeEquipment(String userId, String equipmentId); // Supprimer un équipement de la randonnée
+    ResponseModel<Equipment> removeEquipment(String userId, String hikeId, String equipmentId); // Supprimer un équipement de la randonnée
 
-    ResponseModel<List<EquipmentCategory>> getCategories(String userId);
+    ResponseModel<List<EquipmentCategory>> getCategories(String userId, String hikeId);
 
-    ResponseModel<EquipmentCategory> addCategory(String userId, EquipmentCategory category);
+    ResponseModel<EquipmentCategory> addCategory(String userId, String hikeId, EquipmentCategory category);
 
-    ResponseModel<EquipmentCategory> modifyCategory(String userId, EquipmentCategory category);
+    ResponseModel<EquipmentCategory> modifyCategory(String userId, String hikeId, EquipmentCategory category);
 
-    ResponseModel<EquipmentCategory> removeCategory(String userId, String categoryId);
+    ResponseModel<EquipmentCategory> removeCategory(String userId, String hikeId, String categoryId);
 
 
 

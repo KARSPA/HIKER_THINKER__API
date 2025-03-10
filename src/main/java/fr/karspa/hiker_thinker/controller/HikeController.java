@@ -55,7 +55,7 @@ public class HikeController {
 
 
 
-    @PostMapping("/create")
+    @PostMapping("")
     public ResponseEntity<ResponseModel<Hike>> createHike(@RequestBody Hike hike) {
         String userId = tokenUtils.retreiveUserId();
 
@@ -68,10 +68,11 @@ public class HikeController {
         }
     }
 
-    @PatchMapping("/modify")
-    public ResponseEntity<ResponseModel<Hike>> modifyHike(@RequestBody Hike hike) {
+    @PatchMapping("/{hikeId}")
+    public ResponseEntity<ResponseModel<Hike>> modifyHike(@PathVariable String hikeId, @RequestBody Hike hike) {
         String userId = tokenUtils.retreiveUserId();
 
+        hike.setId(hikeId);
         ResponseModel<Hike> response = hikeService.modifyOne(userId, hike);
 
         if(response.getCode().equals("200")){
@@ -81,8 +82,8 @@ public class HikeController {
         }
     }
 
-    @DeleteMapping("/remove")
-    public ResponseEntity<ResponseModel<Hike>> deleteHike(@RequestParam(name = "id") String hikeId) {
+    @DeleteMapping("/{hikeId}")
+    public ResponseEntity<ResponseModel<Hike>> deleteHike(@PathVariable String hikeId) {
         String userId = tokenUtils.retreiveUserId();
 
         ResponseModel<Hike> response = hikeService.deleteOne(userId, hikeId);
@@ -114,6 +115,19 @@ public class HikeController {
         ResponseModel<HikeEquipmentDTO> response = hikeService.modifyEquipment(userId, hikeId, hikeEquipmentDTO);
 
         if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @DeleteMapping("/{hikeId}/equipments/{equipmentId}")
+    public ResponseEntity<ResponseModel<Equipment>> modifyEquipmentCategory(@PathVariable(name = "hikeId") String hikeId, @PathVariable(name = "equipmentId") String equipmentId) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<Equipment> response = hikeService.removeEquipment(userId, hikeId, equipmentId);
+
+        if(response.getCode().equals("204")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

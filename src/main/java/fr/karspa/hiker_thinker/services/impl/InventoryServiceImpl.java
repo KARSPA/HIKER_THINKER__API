@@ -132,7 +132,6 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public ResponseModel<Equipment> removeEquipment(String userId, String equipmentId) {
 
-
         boolean doesEquipmentExists = this.checkEquipmentExistsById(userId, equipmentId);
 
         if(!doesEquipmentExists){

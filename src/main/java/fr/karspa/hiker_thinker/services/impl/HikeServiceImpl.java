@@ -183,7 +183,21 @@ public class HikeServiceImpl implements HikeService {
 
     @Override
     public ResponseModel<Equipment> removeEquipment(String ownerId, String hikeId, String equipmentId) {
-        return null;
+
+        boolean doesEquipmentExists = hikeRepository.checkEquipmentExistsById(ownerId, hikeId, equipmentId);
+
+        if(!doesEquipmentExists){
+            return ResponseModel.buildResponse("404", "L'équipement avec cet identifiant n'existe pas dans cette randonnée.", null);
+        }
+
+        // Supprimer l'élément (en utilisant l'equipmentId passé en paramètre).
+        UpdateResult result = hikeRepository.removeEquipmentFromEquipmentList(ownerId, hikeId, equipmentId);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("204", "Équipement supprimé avec succès.", null);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
     }
 
     @Override

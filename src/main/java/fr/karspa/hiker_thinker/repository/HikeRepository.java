@@ -128,6 +128,14 @@ public class HikeRepository {
         return mongoTemplate.updateFirst(query, update, Hike.class);
     }
 
+    public UpdateResult removeEquipmentFromEquipmentList(String ownerId, String hikeId, String equipmentId) {
+        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
+
+        Update update = new Update().pull("inventory.equipments", new Document("_id", equipmentId));
+
+        return mongoTemplate.updateFirst(query, update, Hike.class);
+    }
+
     public UpdateResult addCategoryToCategoryList(String ownerId, String hikeId, EquipmentCategory category) {
 
         Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
@@ -180,6 +188,8 @@ public class HikeRepository {
 
         return mongoTemplate.updateFirst(query, update, Hike.class);
     }
+
+
 
 
 }

@@ -123,6 +123,11 @@ public class HikeServiceImpl implements HikeService {
             return ResponseModel.buildResponse("400", "La catégorie n'existe pas sur cette randonnée.", null);
         }
 
+        // Vérifier si l'équipement n'est pas déjà dans la randonnée.
+        boolean doesEquipmentExistsInHike = hikeRepository.checkEquipmentExistsById(ownerId, hikeId, hikeEquipmentDTO.getSourceId());
+        if(doesEquipmentExistsInHike) {
+            return ResponseModel.buildResponse("409", "L'équipement est déjà présent dans la randonnée.", null);
+        }
         // Récupérer les données de l'équipement source passé dans hikeEquipmentDTO via son id.
         Equipment sourceEquipment = inventoryRepository.findEquipmentById(ownerId, hikeEquipmentDTO.getSourceId());
 
@@ -132,6 +137,7 @@ public class HikeServiceImpl implements HikeService {
 
         // Vérifier si ok et Modifier sa catégorie par celle que l'on souhaite.
         sourceEquipment.setCategoryId(hikeEquipmentDTO.getCategoryId());
+        sourceEquipment.setSourceId(hikeEquipmentDTO.getSourceId()); //Doublon avec l'id de l'équipement mais osef TODO
 
         // Ajouter l'équipement dans l'inventaire de la randonnée.
         UpdateResult result = hikeRepository.addEquipmentToEquipmentList(ownerId, hikeId, sourceEquipment);
@@ -144,32 +150,59 @@ public class HikeServiceImpl implements HikeService {
     }
 
     @Override
-    public ResponseModel<Equipment> modifyEquipment(String userId, String hikeId, Equipment equipment) {
+    public ResponseModel<HikeEquipmentDTO> modifyEquipment(String ownerId, String hikeId, HikeEquipmentDTO hikeEquipmentDTO) {
+        //Méthode utilisée pour modifier la catégorie d'un équipement
+
+        // Vérifier que la randonnée existe
+        boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "La randonnée n'existe pas.", null);
+        }
+
+        // Vérifier si l'équipement est bien dans la randonnée.
+        boolean doesEquipmentExistsInHike = hikeRepository.checkEquipmentExistsById(ownerId, hikeId, hikeEquipmentDTO.getSourceId());
+        if(!doesEquipmentExistsInHike) {
+            return ResponseModel.buildResponse("404", "Impossible de modifier un équipement qui n'existe pas dans la randonnée.", null);
+        }
+
+        // Vérifier que la catégorie demandée existe
+        boolean doesCategoyExists = hikeRepository.checkCategoryExistsById(ownerId, hikeId, hikeEquipmentDTO.getCategoryId());
+        if(!doesCategoyExists) {
+            return ResponseModel.buildResponse("404", "La catégorie demandée n'existe pas dans cette randonnée.", null);
+        }
+
+        // Modifier la catégorie de l'équipement et sauvegarder en base.
+        UpdateResult result = hikeRepository.modifyEquipmentCategory(ownerId, hikeId, hikeEquipmentDTO);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Catégorie de l'équipement modifiée avec succès.", hikeEquipmentDTO);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
+    }
+
+    @Override
+    public ResponseModel<Equipment> removeEquipment(String ownerId, String hikeId, String equipmentId) {
         return null;
     }
 
     @Override
-    public ResponseModel<Equipment> removeEquipment(String userId, String hikeId, String equipmentId) {
+    public ResponseModel<List<EquipmentCategory>> getCategories(String ownerId, String hikeId) {
         return null;
     }
 
     @Override
-    public ResponseModel<List<EquipmentCategory>> getCategories(String userId, String hikeId) {
+    public ResponseModel<EquipmentCategory> addCategory(String ownerId, String hikeId, EquipmentCategory category) {
         return null;
     }
 
     @Override
-    public ResponseModel<EquipmentCategory> addCategory(String userId, String hikeId, EquipmentCategory category) {
+    public ResponseModel<EquipmentCategory> modifyCategory(String ownerId, String hikeId, EquipmentCategory category) {
         return null;
     }
 
     @Override
-    public ResponseModel<EquipmentCategory> modifyCategory(String userId, String hikeId, EquipmentCategory category) {
-        return null;
-    }
-
-    @Override
-    public ResponseModel<EquipmentCategory> removeCategory(String userId, String hikeId, String categoryId) {
+    public ResponseModel<EquipmentCategory> removeCategory(String ownerId, String hikeId, String categoryId) {
         return null;
     }
 
@@ -183,8 +216,4 @@ public class HikeServiceImpl implements HikeService {
         return hikeRepository.checkHikeExistsById(ownerId, hikeId);
     }
 
-
-    private boolean checkAvailableEquipmentName(String userId, String hikeId, Equipment equipment){
-        return hikeRepository.checkAvailableEquipmentName(userId, hikeId, equipment);
-    }
 }

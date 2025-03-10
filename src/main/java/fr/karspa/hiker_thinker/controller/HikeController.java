@@ -106,4 +106,17 @@ public class HikeController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
+    @PatchMapping("/{hikeId}/equipments")
+    public ResponseEntity<ResponseModel<HikeEquipmentDTO>> modifyEquipmentCategory(@PathVariable String hikeId, @RequestBody HikeEquipmentDTO hikeEquipmentDTO) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<HikeEquipmentDTO> response = hikeService.modifyEquipment(userId, hikeId, hikeEquipmentDTO);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
 }

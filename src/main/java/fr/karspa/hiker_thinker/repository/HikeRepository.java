@@ -4,6 +4,7 @@ package fr.karspa.hiker_thinker.repository;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.HikeDTO;
+import fr.karspa.hiker_thinker.dtos.HikeEquipmentDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Hike;
@@ -57,7 +58,6 @@ public class HikeRepository {
         // Ne pas mettre à jour ownerId, modelId ou inventory !
 
         return mongoTemplate.updateFirst(query, update, Hike.class);
-
     }
 
     public Hike deleteOneHike(String ownerId, String hikeId){
@@ -138,10 +138,10 @@ public class HikeRepository {
     }
 
     // En vrai le filtrage par utilisateur n'est pas vraiment nécessaire étant donné que les document on un identifiant unique MAIS pour éviter de récupérer les trucs des autres ...
-    public boolean checkCategoryExistsById(String userId, String hikeId, String categoryId) {
+    public boolean checkCategoryExistsById(String ownerId, String hikeId, String categoryId) {
 
         Query query = new Query(
-                Criteria.where("ownerId").is(userId)
+                Criteria.where("ownerId").is(ownerId)
                         .and("_id").is(hikeId)
                         .and("inventory.categories").elemMatch(
                                 Criteria.where("_id").is(categoryId)
@@ -152,7 +152,34 @@ public class HikeRepository {
         return (doc != null);
     }
 
+    public boolean checkEquipmentExistsById(String ownerId, String hikeId, String equipmentId) {
 
+        Query query = new Query(
+                Criteria.where("ownerId").is(ownerId)
+                        .and("_id").is(hikeId)
+                        .and("inventory.equipments").elemMatch(
+                                Criteria.where("_id").is(equipmentId)
+                        ));
+
+        Document doc = mongoTemplate.findOne(query, Document.class, "hikes");
+
+        return (doc != null);
+    }
+
+
+    public UpdateResult modifyEquipmentCategory(String ownerId, String hikeId, HikeEquipmentDTO equipment) {
+        Query query = new Query(
+                Criteria.where("ownerId").is(ownerId)
+                        .and("_id").is(hikeId)
+                        .and("inventory.equipments").elemMatch(
+                                Criteria.where("_id").is(equipment.getSourceId())
+                        ));
+
+        Update update = new Update();
+        update.set("inventory.equipments.$.categoryId", equipment.getCategoryId());
+
+        return mongoTemplate.updateFirst(query, update, Hike.class);
+    }
 
 
 }

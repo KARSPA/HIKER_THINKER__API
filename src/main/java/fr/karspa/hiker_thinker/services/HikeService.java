@@ -21,7 +21,7 @@ public interface HikeService {
 
     ResponseModel<Equipment> addEquipment(String userId, String hikeId, HikeEquipmentDTO hikeEquipmentDTO); // Ajouter un équipement à la randonnée
 
-    ResponseModel<Equipment> modifyEquipment(String userId, String hikeId, Equipment equipment); // Modifier un équipement de la randonnée
+    ResponseModel<HikeEquipmentDTO> modifyEquipment(String userId, String hikeId, HikeEquipmentDTO hikeEquipmentDTO); // Modifier un équipement de la randonnée
 
     ResponseModel<Equipment> removeEquipment(String userId, String hikeId, String equipmentId); // Supprimer un équipement de la randonnée
 

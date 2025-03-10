@@ -120,7 +120,13 @@ public class HikeRepository {
         return (doc == null);
     }
 
+    public UpdateResult addEquipmentToEquipmentList(String ownerId, String hikeId, Equipment equipment) {
+        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
 
+        Update update = new Update().push("inventory.equipments", equipment);
+
+        return mongoTemplate.updateFirst(query, update, Hike.class);
+    }
 
     public UpdateResult addCategoryToCategoryList(String ownerId, String hikeId, EquipmentCategory category) {
 
@@ -131,50 +137,22 @@ public class HikeRepository {
         return mongoTemplate.updateFirst(query, update, Hike.class);
     }
 
-    public UpdateResult addEquipmentToEquipmentList(String ownerId, String hikeId, Equipment equipment) {
-        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
+    // En vrai le filtrage par utilisateur n'est pas vraiment nécessaire étant donné que les document on un identifiant unique MAIS pour éviter de récupérer les trucs des autres ...
+    public boolean checkCategoryExistsById(String userId, String hikeId, String categoryId) {
 
-        Update update = new Update().push("inventory.equipments", equipment);
-
-        return mongoTemplate.updateFirst(query, update, Hike.class);
-    }
-
-
-    public String getCategoryIdByCategoryName(String ownerId, String hikeId, String categoryName) {
         Query query = new Query(
-                Criteria.where("ownerId").is(ownerId)
+                Criteria.where("ownerId").is(userId)
                         .and("_id").is(hikeId)
                         .and("inventory.categories").elemMatch(
-                                Criteria.where("name").is(categoryName)));
-        query.fields().include("inventory.categories");
+                                Criteria.where("_id").is(categoryId)
+                        ));
 
         Document doc = mongoTemplate.findOne(query, Document.class, "hikes");
-        if (doc == null) {
-            return null; // Aucun utilisateur trouvé, ou pas d'inventaire
-        }
 
-        // Récupérer l'inventaire depuis le document
-        Document inventoryDoc = (Document) doc.get("inventory");
-        if (inventoryDoc == null) {
-            return null;
-        }
-
-        // La liste des catégories est supposée être stockée sous forme de List<Document>
-        List<Document> categories = (List<Document>) inventoryDoc.get("categories");
-        if (categories == null) {
-            return null;
-        }
-
-        // Parcourir la liste pour trouver la catégorie dont le "name" correspond
-        for (Document catDoc : categories) {
-            String name = catDoc.getString("name");
-            if (categoryName.equals(name)) {
-                // On suppose que l'identifiant est stocké sous la clé "_id"
-                return catDoc.getString("_id");
-            }
-        }
-
-        return null;
+        return (doc != null);
     }
+
+
+
 
 }

@@ -271,4 +271,21 @@ public class InventoryRepository {
     }
 
 
+    public Equipment findEquipmentById(String userId, String equipmentId) {
+        // Construire la query pour récupérer uniquement l'inventaire de l'utilisateur
+        Query query = new Query(Criteria.where("_id").is(userId));
+        query.fields().include("inventory.equipments");
+
+        User user = mongoTemplate.findOne(query, User.class);
+        if(user == null || user.getInventory() == null || user.getInventory().getEquipments() == null) {
+            return null; // ou lancer une exception si l'utilisateur ou l'inventaire est introuvable
+        }
+
+        return user.getInventory().getEquipments()
+                .stream()
+                .filter(equipment -> equipmentId.equals(equipment.getId()))
+                .findFirst()
+                .orElse(null);
+    }
+
 }

@@ -2,6 +2,7 @@ package fr.karspa.hiker_thinker.services.impl;
 
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.HikeEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
@@ -108,12 +109,7 @@ public class HikeServiceImpl implements HikeService {
     }
 
     @Override
-    public ResponseModel<Equipment> addEquipment(String ownerId, String hikeId, EquipmentDTO equipmentDTO) {
-
-        // Créer les instance nécessaires aux vérifications et enregistrement.
-        Equipment equipment = equipmentDTO.mapToEntity();
-        String categoryName = equipmentDTO.getCategoryName();
-
+    public ResponseModel<Equipment> addEquipment(String ownerId, String hikeId, HikeEquipmentDTO hikeEquipmentDTO) {
 
         //Vérifier que la randonnée existe :
         boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
@@ -121,56 +117,29 @@ public class HikeServiceImpl implements HikeService {
             return ResponseModel.buildResponse("400", "Immpossible d'ajouter un équipement à une randonnée qui n'existe pas.", null);
         }
 
-
-        //Vérifier que l'équipement existe dans son inventaire.
-        boolean doesSourceEquipmentExists = inventoryRepository.checkEquipmentExistsById(ownerId, equipment.getSourceId());
-        if(!doesSourceEquipmentExists) {
-            return ResponseModel.buildResponse("404", "L'équipement que vous essayez d'ajouter ne se trouve pas dans votre inventaire.", null);
+        // Vérifier que la catégorie à laquelle on veut ajouter l'équipement existe bien dans hike.inventory.categories
+        boolean doesCategoryExists = hikeRepository.checkCategoryExistsById(ownerId, hikeId, hikeEquipmentDTO.getCategoryId());
+        if(!doesCategoryExists) {
+            return ResponseModel.buildResponse("400", "La catégorie n'existe pas sur cette randonnée.", null);
         }
 
+        // Récupérer les données de l'équipement source passé dans hikeEquipmentDTO via son id.
+        Equipment sourceEquipment = inventoryRepository.findEquipmentById(ownerId, hikeEquipmentDTO.getSourceId());
 
-        //Vérifier l'unicité du name avant d'enregistrer (si filou qui essaye)
-        boolean isNameAvailable = this.checkAvailableEquipmentName(ownerId, hikeId, equipment);
-        if(!isNameAvailable){
-            return ResponseModel.buildResponse("400", "Un équipement avec ce nom existe déjà dans la randonnée. ("+equipment.getName()+")", null);
+        if(sourceEquipment == null) {
+            return ResponseModel.buildResponse("404", "L'équipement voulu n'existe pas dans l'inventaire.", null);
         }
 
-        //Générer un nouvel identifiant unique pour cet équipement
-        String uniqueId = RandomGenerator.generateUUIDWithPrefix("h_equip");
-        equipment.setId(uniqueId);
+        // Vérifier si ok et Modifier sa catégorie par celle que l'on souhaite.
+        sourceEquipment.setCategoryId(hikeEquipmentDTO.getCategoryId());
 
-        //On récupère l'identifiant de la catégorie avec ce nom et on agit en fonction.
-        String categoryId = hikeRepository.getCategoryIdByCategoryName(ownerId, hikeId, categoryName);
+        // Ajouter l'équipement dans l'inventaire de la randonnée.
+        UpdateResult result = hikeRepository.addEquipmentToEquipmentList(ownerId, hikeId, sourceEquipment);
 
-        // Si la catégorie n'existe pas, l'ajouter dans la liste des catégories de l'inventaire
-        if (categoryId == null) {
-
-            String newCategoryId = RandomGenerator.generateRandomStringWithPrefix("h_cat");
-            EquipmentCategory newCategory = new EquipmentCategory();
-            newCategory.setId(newCategoryId);
-            newCategory.setName(categoryName);
-            // icon null et on affichera un truc générique
-
-            // Ne pas oublier d'ajouter la référence à la nouvelle catégorie dans l'équipement.
-            equipment.setCategoryId(newCategoryId);
-
-            UpdateResult resultCat = hikeRepository.addCategoryToCategoryList(ownerId, hikeId, newCategory);
-            // Si aucune catégorie n'a été ajoutée, retourner une erreur
-            if (resultCat.getModifiedCount() == 0) {
-                return ResponseModel.buildResponse("500", "Échec de l'ajout de la catégorie.", null);
-            }
-        }else{
-            //Si on est là c'est que la catégorie existe, on doit donc ajouter la référence de categoryId dans l'équipement
-            equipment.setCategoryId(categoryId);
-        }
-
-        // Ajouter l'équipement à la liste des équipements de l'inventaire
-        UpdateResult resultEquip = hikeRepository.addEquipmentToEquipmentList(ownerId, hikeId, equipment);
-
-        if (resultEquip.getModifiedCount() > 0) {
-            return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", equipment);
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", sourceEquipment);
         } else {
-            return ResponseModel.buildResponse("500", "Échec de l'ajout de l'équipement.", null);
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
     }
 

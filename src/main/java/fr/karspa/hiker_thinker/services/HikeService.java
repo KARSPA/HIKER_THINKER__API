@@ -1,6 +1,7 @@
 package fr.karspa.hiker_thinker.services;
 
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.HikeEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
@@ -18,7 +19,7 @@ public interface HikeService {
 
     ResponseModel<Hike> deleteOne(String ownerId, String hikeId);
 
-    ResponseModel<Equipment> addEquipment(String userId, String hikeId, EquipmentDTO equipmentDTO); // Ajouter un équipement à la randonnée
+    ResponseModel<Equipment> addEquipment(String userId, String hikeId, HikeEquipmentDTO hikeEquipmentDTO); // Ajouter un équipement à la randonnée
 
     ResponseModel<Equipment> modifyEquipment(String userId, String hikeId, Equipment equipment); // Modifier un équipement de la randonnée
 

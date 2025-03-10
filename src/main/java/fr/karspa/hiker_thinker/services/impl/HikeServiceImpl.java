@@ -3,23 +3,17 @@ package fr.karspa.hiker_thinker.services.impl;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
-import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Hike;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.repository.HikeRepository;
 import fr.karspa.hiker_thinker.services.HikeService;
-import fr.karspa.hiker_thinker.utils.InventoryUtils;
-import fr.karspa.hiker_thinker.utils.RandomGenerator;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -48,7 +42,7 @@ public class HikeServiceImpl implements HikeService {
     public ResponseModel<Hike> createOne(String ownerId, Hike hike) {
 
         // Vérifier le titre de la randonnée (unique)
-        boolean isTitleAvailable = checkHikeTitleAvailable(ownerId, hike.getTitle());
+        boolean isTitleAvailable = checkHikeTitleAvailable(ownerId, hike);
         if (!isTitleAvailable) {
             return ResponseModel.buildResponse("409", "Une randonnée avec ce titre existe déjà.", null);
         }
@@ -73,17 +67,41 @@ public class HikeServiceImpl implements HikeService {
     @Override
     public ResponseModel<Hike> modifyOne(String ownerId, Hike hike) {
 
+        // TODO : VALIDATION DES VALEURS DES CHAMPS (NOT NULL, NOT BLANK ETC)
+
         // Vérifier que la randonnée avec l'identifiant existe pour cet utilisateur
+        boolean doesHikeExists = (hike.getId() != null) && this.checkHikeExistsById(ownerId, hike.getId());
+
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "Randonnée avec cet identifiant non trouvée.", null);
+        }
 
         // Vérifier que le titre est disponible (sans compter celle-ci évidemment ...)
+        boolean isTitleAvailable = checkHikeTitleAvailable(ownerId, hike);
+        if (!isTitleAvailable) {
+            return ResponseModel.buildResponse("409", "Une randonnée existe déjà avec ce titre", null);
+        }
 
+        UpdateResult result = hikeRepository.updateOneHike(hike);
 
-        return null;
+        if (result.getModifiedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Randonnée modifiée avec succès.", hike);
+        } else {
+            return ResponseModel.buildResponse("500", "Échec de la modification de la randonnée.", null);
+        }
     }
 
     @Override
-    public ResponseModel<Hike> deleteOne(String ownerId, Hike hike) {
-        return null;
+    public ResponseModel<Hike> deleteOne(String ownerId, String hikeId) {
+
+        boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "Aucune randonnée trouvée pour cette identifiant.", null);
+        }
+
+        Hike deletedHike = hikeRepository.deleteOneHike(ownerId, hikeId);
+
+        return ResponseModel.buildResponse("204", "Randonnée supprimée avec succès.", deletedHike);
     }
 
     @Override
@@ -122,7 +140,12 @@ public class HikeServiceImpl implements HikeService {
     }
 
 
-    private boolean checkHikeTitleAvailable(String ownerId, String hikeTitle) {
-        return hikeRepository.checkHikeTitleAvailable(ownerId, hikeTitle);
+    private boolean checkHikeTitleAvailable(String ownerId, Hike hike) {
+        return hikeRepository.checkHikeTitleAvailable(ownerId, hike);
+    }
+
+
+    private boolean checkHikeExistsById(String ownerId, String hikeId) {
+        return hikeRepository.checkHikeExistsById(ownerId, hikeId);
     }
 }

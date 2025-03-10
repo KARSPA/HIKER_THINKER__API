@@ -99,7 +99,7 @@ public class InventoryServiceImpl implements InventoryService {
     public ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment) {
 
         //Vérifier que l'équipement avec cet id existe dans l'inventaire.
-        boolean doesIdExists = this.checkEquipmentExistsById(userId, equipment);
+        boolean doesIdExists = this.checkEquipmentExistsById(userId, equipment.getId());
 
         if(!doesIdExists){
             return ResponseModel.buildResponse("404", "Aucun équipement avec cet identifiant n'existe dans votre inventaire.", null);
@@ -131,6 +131,13 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<Equipment> removeEquipment(String userId, String equipmentId) {
+
+
+        boolean doesEquipmentExists = this.checkEquipmentExistsById(userId, equipmentId);
+
+        if(!doesEquipmentExists){
+            return ResponseModel.buildResponse("404", "L'équipement avec cet identifiant n'existe pas dans votre inventaire.", null);
+        }
 
         // Supprimer l'élément (en utilisant l'equipmentId passé en paramètre).
         UpdateResult result = inventoryRepository.removeEquipment(userId, equipmentId);
@@ -220,8 +227,8 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
 
-    private boolean checkEquipmentExistsById(String userId, Equipment equipment){
-        return inventoryRepository.checkEquipmentExistsById(userId, equipment);
+    private boolean checkEquipmentExistsById(String userId, String equipmentId){
+        return inventoryRepository.checkEquipmentExistsById(userId, equipmentId);
     }
 
 

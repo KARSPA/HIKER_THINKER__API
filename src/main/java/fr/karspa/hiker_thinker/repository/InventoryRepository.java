@@ -153,10 +153,10 @@ public class InventoryRepository {
         return (doc == null);
     }
 
-    public boolean checkEquipmentExistsById(String userId, Equipment equipment) {
+    public boolean checkEquipmentExistsById(String userId, String equipmentId) {
 
         Query query = new Query(Criteria.where("_id").is(userId)
-                .and("inventory.equipments._id").is(equipment.getId()));
+                .and("inventory.equipments._id").is(equipmentId));
 
         Document doc = mongoTemplate.findOne(query, Document.class, "users");
 

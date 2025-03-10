@@ -52,13 +52,39 @@ public class HikeController {
 
 
 
-    @PostMapping("")
+    @PostMapping("/create")
     public ResponseEntity<ResponseModel<Hike>> createHike(@RequestBody Hike hike) {
         String userId = tokenUtils.retreiveUserId();
 
         ResponseModel<Hike> response = hikeService.createOne(userId, hike);
 
         if(response.getCode().equals("201")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @PatchMapping("/modify")
+    public ResponseEntity<ResponseModel<Hike>> modifyHike(@RequestBody Hike hike) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<Hike> response = hikeService.modifyOne(userId, hike);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @DeleteMapping("/remove")
+    public ResponseEntity<ResponseModel<Hike>> deleteHike(@RequestParam(name = "id") String hikeId) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<Hike> response = hikeService.deleteOne(userId, hikeId);
+
+        if(response.getCode().equals("204")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

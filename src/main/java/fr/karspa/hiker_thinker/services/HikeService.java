@@ -15,7 +15,8 @@ public interface HikeService {
     ResponseModel<HikeResponseDTO> findByHikeId(String ownerId, String hikeId);
     ResponseModel<Hike> createOne(String ownerId, Hike hike);
     ResponseModel<Hike> modifyOne(String ownerId, Hike hike);
-    ResponseModel<Hike> deleteOne(String ownerId, Hike hike);
+
+    ResponseModel<Hike> deleteOne(String ownerId, String hikeId);
 
     ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO); // Ajouter un équipement à la randonnée
 

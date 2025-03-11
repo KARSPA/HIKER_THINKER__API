@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -202,22 +203,103 @@ public class HikeServiceImpl implements HikeService {
 
     @Override
     public ResponseModel<List<EquipmentCategory>> getCategories(String ownerId, String hikeId) {
-        return null;
+
+        // Vérifier que la randonnée existe
+        boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "La randonnée n'existe pas.", null);
+        }
+
+        //Récupérer l'inventaire dans la BDD
+        var categories = hikeRepository.getCategories(ownerId, hikeId);
+
+        //Check si null
+        if(categories.isEmpty())
+            return ResponseModel.buildResponse("404", "Aucune catégories disponibles.", null);
+
+
+        return ResponseModel.buildResponse("200", "Catégories récupérées avec succès.", categories);
     }
 
     @Override
     public ResponseModel<EquipmentCategory> addCategory(String ownerId, String hikeId, EquipmentCategory category) {
-        return null;
+
+        // Vérifier que la randonnée existe
+        boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "La randonnée n'existe pas.", null);
+        }
+
+        boolean doesCategoryExist = hikeRepository.checkCategoryExistsByName(ownerId, hikeId, category.getName());
+        if(doesCategoryExist){
+            return ResponseModel.buildResponse("409", "La catégorie existe déjà dans l'inventaire de cette randonnée.", null);
+        }
+
+        category.setId(RandomGenerator.generateRandomStringWithPrefix("cat"));
+        UpdateResult result = hikeRepository.addCategoryToCategoryList(ownerId, hikeId, category);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("201", "Catégorie créée avec succès.", category);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
     }
 
     @Override
     public ResponseModel<EquipmentCategory> modifyCategory(String ownerId, String hikeId, EquipmentCategory category) {
-        return null;
+
+        // Vérifier que la randonnée existe
+        boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "La randonnée n'existe pas.", null);
+        }
+
+        boolean doesCategoryExist = hikeRepository.checkCategoryExistsById(ownerId, hikeId, category.getId());
+        if(!doesCategoryExist){
+            return ResponseModel.buildResponse("404", "La catégorie à modifier n'existe pas dans cette randonnée.", null);
+        }
+
+        UpdateResult result = hikeRepository.modifyCategoryInCategoryList(ownerId, hikeId, category);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Catégorie modifiée avec succès.", category);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
     }
 
     @Override
     public ResponseModel<EquipmentCategory> removeCategory(String ownerId, String hikeId, String categoryId) {
-        return null;
+
+        // Vérifier que la randonnée existe
+        boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "La randonnée n'existe pas.", null);
+        }
+
+        //Vérifier si id = "DEFAULT" (pas supprimable dans ce cas)
+        if (Objects.equals(categoryId, "DEFAULT")){
+            return ResponseModel.buildResponse("403", "Bien tenté mais pas autorisé.", null);
+        }
+
+        boolean doesCategoryExist = hikeRepository.checkCategoryExistsById(ownerId, hikeId, categoryId);
+        if(!doesCategoryExist){
+            return ResponseModel.buildResponse("404", "La catégorie à supprimer n'existe pas dans cette randonnée.", null);
+        }
+
+        UpdateResult removeCatResult = hikeRepository.removeCategoryInCategoryList(ownerId, hikeId, categoryId);
+
+        //Récupérer tous les équipements avec cette catégorie
+        List<Equipment> equipmentsToReset = hikeRepository.findEquipmentsByCategory(ownerId, hikeId, categoryId);
+
+        //Reset la catégorie et sauvegarder en bdd
+        this.resetEquipmentsCategory(ownerId, hikeId, equipmentsToReset);
+
+        if (removeCatResult.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("204", "Catégorie supprimée et équipements mis à jour avec succès.", null);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur lors de la suppression de la catégorie.", null);
+        }
     }
 
 
@@ -228,6 +310,13 @@ public class HikeServiceImpl implements HikeService {
 
     private boolean checkHikeExistsById(String ownerId, String hikeId) {
         return hikeRepository.checkHikeExistsById(ownerId, hikeId);
+    }
+
+    private void resetEquipmentsCategory(String userId, String hikeId, List<Equipment> equipments){
+        for(Equipment equipment : equipments){
+            HikeEquipmentDTO equip = HikeEquipmentDTO.builder().categoryId("DEFAULT").sourceId(equipment.getId()).build();
+            hikeRepository.modifyEquipmentCategory(userId, hikeId, equip);
+        }
     }
 
 }

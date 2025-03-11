@@ -17,7 +17,9 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Repository
 @AllArgsConstructor
@@ -190,6 +192,68 @@ public class HikeRepository {
     }
 
 
+    public List<EquipmentCategory> getCategories(String ownerId, String hikeId) {
+        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
+        query.fields().include("inventory.categories");
 
+        Hike hike = mongoTemplate.findOne(query, Hike.class);
+        if(hike == null || hike.getInventory() == null) {
+            return Collections.emptyList();
+        }
+        return hike.getInventory().getCategories();
+    }
+
+
+    public boolean checkCategoryExistsByName(String ownerId, String hikeId, String category) {
+
+        Query query = new Query(
+                Criteria.where("ownerId").is(ownerId)
+                        .and("_id").is(hikeId)
+                        .and("inventory.categories").elemMatch(
+                                Criteria.where("name").is(category)
+                        ));
+
+        Document doc = mongoTemplate.findOne(query, Document.class, "hikes");
+
+        return (doc != null);
+    }
+
+    public UpdateResult modifyCategoryInCategoryList(String ownerId, String hikeId, EquipmentCategory category) {
+
+        Query query = new Query(
+                Criteria.where("ownerId").is(ownerId)
+                        .and("_id").is(hikeId)
+                        .and("inventory.categories._id").is(category.getId())
+        );
+
+        Update update = new Update().set("inventory.categories.$", category);
+
+        return mongoTemplate.updateFirst(query, update, Hike.class);
+    }
+
+    public UpdateResult removeCategoryInCategoryList(String ownerId, String hikeId, String categoryId) {
+
+        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
+
+        Update update = new Update().pull("inventory.categories", new Document("_id", categoryId));
+
+        return mongoTemplate.updateFirst(query, update, User.class);
+    }
+
+
+    public List<Equipment> findEquipmentsByCategory(String ownerId, String hikeId, String categoryId){
+
+        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
+        query.fields().include("inventory.equipments");
+
+        Hike hike = mongoTemplate.findOne(query, Hike.class);
+        if (hike == null || hike.getInventory() == null || hike.getInventory().getEquipments() == null) {
+            return Collections.emptyList();
+        }
+
+        return hike.getInventory().getEquipments().stream()
+                .filter(e -> categoryId.equals(e.getCategoryId()))
+                .collect(Collectors.toList());
+    }
 
 }

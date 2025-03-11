@@ -133,4 +133,60 @@ public class HikeController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
+
+    @GetMapping("/{hikeId}/categories")
+    public ResponseEntity<ResponseModel<List<EquipmentCategory>>> getCategories(@PathVariable String hikeId) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<List<EquipmentCategory>> response = hikeService.getCategories(userId, hikeId);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @PostMapping("/{hikeId}/categories")
+    public ResponseEntity<ResponseModel<EquipmentCategory>> addCategory(@PathVariable String hikeId, @RequestBody EquipmentCategory equipmentCategory) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<EquipmentCategory> response = hikeService.addCategory(userId, hikeId, equipmentCategory);
+
+        if(response.getCode().equals("201")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @PatchMapping("/{hikeId}/categories/{categoryId}")
+    public ResponseEntity<ResponseModel<EquipmentCategory>> modifyCategory(@PathVariable String hikeId,
+                                                                           @PathVariable(name = "categoryId") String categoryId,
+                                                                           @RequestBody EquipmentCategory equipmentCategory) {
+        String userId = tokenUtils.retreiveUserId();
+
+        equipmentCategory.setId(categoryId);
+        ResponseModel<EquipmentCategory> response = hikeService.modifyCategory(userId, hikeId, equipmentCategory);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    @DeleteMapping("/{hikeId}/categories/{categoryId}")
+    public ResponseEntity<ResponseModel<EquipmentCategory>> removeCategory(@PathVariable String hikeId, @PathVariable(name = "categoryId") String categoryId) {
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<EquipmentCategory> response = hikeService.removeCategory(userId, hikeId, categoryId);
+
+        if(response.getCode().equals("204")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
 }

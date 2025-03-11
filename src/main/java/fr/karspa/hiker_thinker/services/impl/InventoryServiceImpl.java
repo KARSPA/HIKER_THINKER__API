@@ -157,7 +157,7 @@ public class InventoryServiceImpl implements InventoryService {
             return ResponseModel.buildResponse("409", "La catégorie existe déjà dans l'inventaire.", null);
         }
 
-        category.setId(RandomGenerator.generateRandomString());
+        category.setId(RandomGenerator.generateRandomStringWithPrefix("cat"));
         UpdateResult result = inventoryRepository.addCategoryToCategoryList(userId, category);
 
         if (result.getMatchedCount() > 0) {

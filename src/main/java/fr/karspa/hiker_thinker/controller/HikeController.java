@@ -108,10 +108,13 @@ public class HikeController {
         }
     }
 
-    @PatchMapping("/{hikeId}/equipments")
-    public ResponseEntity<ResponseModel<HikeEquipmentDTO>> modifyEquipmentCategory(@PathVariable String hikeId, @RequestBody HikeEquipmentDTO hikeEquipmentDTO) {
+    @PatchMapping("/{hikeId}/equipments/{equipmentId}")
+    public ResponseEntity<ResponseModel<HikeEquipmentDTO>> modifyEquipmentCategory(@PathVariable String hikeId,
+                                                                                   @RequestBody HikeEquipmentDTO hikeEquipmentDTO,
+                                                                                   @PathVariable String equipmentId) {
         String userId = tokenUtils.retreiveUserId();
 
+        hikeEquipmentDTO.setSourceId(equipmentId);
         ResponseModel<HikeEquipmentDTO> response = hikeService.modifyEquipment(userId, hikeId, hikeEquipmentDTO);
 
         if(response.getCode().equals("200")){

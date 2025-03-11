@@ -38,7 +38,7 @@ public class InventoryController {
         }
     }
 
-    @PostMapping("/equipments/add")
+    @PostMapping("/equipments")
     public ResponseEntity<ResponseModel<Equipment>> addEquipment(@RequestBody EquipmentDTO equipmentDTO){
         String userId = tokenUtils.retreiveUserId();
 
@@ -51,10 +51,11 @@ public class InventoryController {
         }
     }
 
-    @PatchMapping("/equipments/modify")
-    public ResponseEntity<ResponseModel<Equipment>> modifyEquipment(@RequestBody Equipment equipment){
+    @PatchMapping("/equipments/{equipmentId}")
+    public ResponseEntity<ResponseModel<Equipment>> modifyEquipment(@PathVariable String equipmentId, @RequestBody Equipment equipment){
         String userId = tokenUtils.retreiveUserId();
 
+        equipment.setId(equipmentId);
         ResponseModel<Equipment> response = inventoryService.modifyEquipment(userId, equipment);
 
         if(response.getCode().equals("200")){
@@ -64,8 +65,8 @@ public class InventoryController {
         }
     }
 
-    @DeleteMapping("/equipments/remove")
-    public ResponseEntity<ResponseModel<Equipment>> removeEquipment(@RequestParam(name = "id") String equipmentId){
+    @DeleteMapping("/equipments/{equipmentId}")
+    public ResponseEntity<ResponseModel<Equipment>> removeEquipment(@PathVariable String equipmentId){
         String userId = tokenUtils.retreiveUserId();
 
         ResponseModel<Equipment> response = inventoryService.removeEquipment(userId, equipmentId);
@@ -91,7 +92,7 @@ public class InventoryController {
         }
     }
 
-    @PostMapping("/categories/add")
+    @PostMapping("/categories")
     public ResponseEntity<ResponseModel<EquipmentCategory>> addCategory(@RequestBody EquipmentCategory category){
         String userId = tokenUtils.retreiveUserId();
 
@@ -104,10 +105,11 @@ public class InventoryController {
         }
     }
 
-    @PatchMapping("/categories/modify")
-    public ResponseEntity<ResponseModel<EquipmentCategory>> modifyCategory(@RequestBody EquipmentCategory category){
+    @PatchMapping("/categories/{categoryId}")
+    public ResponseEntity<ResponseModel<EquipmentCategory>> modifyCategory(@RequestBody EquipmentCategory category, @PathVariable String categoryId){
         String userId = tokenUtils.retreiveUserId();
 
+        category.setId(categoryId);
         ResponseModel<EquipmentCategory> response = inventoryService.modifyCategory(userId, category);
 
         if(response.getCode().equals("200")){
@@ -117,8 +119,8 @@ public class InventoryController {
         }
     }
 
-    @DeleteMapping("/categories/remove")
-    public ResponseEntity<ResponseModel<EquipmentCategory>> removeCategory(@RequestParam(name = "id") String categoryId){
+    @DeleteMapping("/categories/{categoryId}")
+    public ResponseEntity<ResponseModel<EquipmentCategory>> removeCategory(@PathVariable String categoryId){
         String userId = tokenUtils.retreiveUserId();
 
         ResponseModel<EquipmentCategory> response = inventoryService.removeCategory(userId, categoryId);

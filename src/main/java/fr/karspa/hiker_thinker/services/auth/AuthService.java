@@ -9,4 +9,6 @@ import fr.karspa.hiker_thinker.utils.ResponseModel;
 public interface AuthService {
     ResponseModel<LoginResponseDTO> login(LoginDTO loginDTO);
     ResponseModel<RegisterResponseDTO> register(RegisterDTO registerDTO);
+
+    ResponseModel<LoginResponseDTO> verifyConnected(String userId);
 }

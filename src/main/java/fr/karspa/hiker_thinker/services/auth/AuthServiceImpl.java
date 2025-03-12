@@ -7,7 +7,6 @@ import fr.karspa.hiker_thinker.dtos.responses.RegisterResponseDTO;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
-import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.repository.AuthUserRepository;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import lombok.AllArgsConstructor;
@@ -20,7 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -46,6 +44,8 @@ public class AuthServiceImpl implements AuthService {
             LoginResponseDTO loginResponseDTO = LoginResponseDTO.builder()
                     .userId(user.getId())
                     .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
                     .jwt(token)
                     .build();
 
@@ -84,6 +84,27 @@ public class AuthServiceImpl implements AuthService {
         RegisterResponseDTO registerResponseDTO = new RegisterResponseDTO(savedUser.getId(), savedUser.getEmail());
 
         return ResponseModel.buildResponse("201", "Utilisateur créé avec succès.", registerResponseDTO);
+
+    }
+
+    @Override
+    public ResponseModel<LoginResponseDTO> verifyConnected(String userId) {
+
+        User user = userRepository.findById(userId).orElse(null);
+
+        if(user == null){
+            return ResponseModel.buildResponse("404", "Utilisateur non trouvé.", null);
+        }
+
+        LoginResponseDTO loginResponseDTO = LoginResponseDTO.builder()
+                .userId(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .build();
+
+        return ResponseModel.buildResponse("200", "Informations de l'utilisateur trouvé avec succès.", loginResponseDTO);
+
 
     }
 }

@@ -23,11 +23,9 @@ public class UserController {
         this.tokenUtils = tokenUtils;
     }
 
-    @GetMapping("")
-    public ResponseEntity<ResponseModel<LoginResponseDTO>> login() {
-        String userId = tokenUtils.retreiveUserId();
-
-        ResponseModel<LoginResponseDTO> response = authService.verifyConnected(userId);
+    @GetMapping("/verify")
+    public ResponseEntity<ResponseModel<LoginResponseDTO>> verifyTokenValidity(@RequestHeader(name = "Authorization") String token) {
+        ResponseModel<LoginResponseDTO> response = authService.verifyConnected(token.substring(7));
 
         if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);

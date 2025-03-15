@@ -26,16 +26,16 @@ public class InventoryRepository {
 
     private MongoTemplate mongoTemplate;
 
-    public Map<String, List<Equipment>> getInventory(String userId) {
+    public Inventory getInventory(String userId) {
         Query query = new Query(Criteria.where("_id").is(userId));
         query.fields().include("inventory");
         User user = mongoTemplate.findOne(query, User.class);
 
         if (user == null || user.getInventory() == null) {
-            return Collections.emptyMap();
+            return null;
         }
 
-        return InventoryUtils.restructureInventory(user.getInventory()).getEquipments();
+        return user.getInventory();
     }
 
 
@@ -101,6 +101,7 @@ public class InventoryRepository {
 
     public UpdateResult modifyCategoryInCategoryList(String userId, EquipmentCategory category) {
 
+        System.out.println(category);
         Query query = new Query(
                 Criteria.where("_id").is(userId)
                         .and("inventory.categories._id").is(category.getId())

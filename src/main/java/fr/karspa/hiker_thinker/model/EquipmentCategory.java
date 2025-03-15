@@ -1,14 +1,12 @@
 package fr.karspa.hiker_thinker.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class EquipmentCategory {
 
     private String id;
@@ -16,4 +14,6 @@ public class EquipmentCategory {
     private String name;
 
     private String icon;
+
+    private int order;
 }

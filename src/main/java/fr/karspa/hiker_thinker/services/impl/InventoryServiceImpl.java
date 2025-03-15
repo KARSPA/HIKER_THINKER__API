@@ -7,6 +7,7 @@ import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
+import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.repository.InventoryRepository;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.RandomGenerator;
@@ -28,17 +29,14 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public ResponseModel<InventoryDTO> findByUserId(String userId) {
+    public ResponseModel<Inventory> findByUserId(String userId) {
 
         var inventory = inventoryRepository.getInventory(userId);
 
         if(inventory == null)
             return ResponseModel.buildResponse("710", "Aucun inventaire disponible.", null);
 
-        InventoryDTO inventoryDTO = new InventoryDTO();
-        inventoryDTO.setEquipments(inventory);
-
-        return ResponseModel.buildResponse("200", "Inventaire récupéré avec succès.", inventoryDTO);
+        return ResponseModel.buildResponse("200", "Inventaire récupéré avec succès.", inventory);
     }
 
     @Override

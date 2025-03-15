@@ -4,6 +4,7 @@ import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
+import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import fr.karspa.hiker_thinker.utils.TokenUtils;
@@ -26,10 +27,10 @@ public class InventoryController {
     }
 
     @GetMapping("")
-    public ResponseEntity<ResponseModel<InventoryDTO>> getInventory(){
+    public ResponseEntity<ResponseModel<Inventory>> getInventory(){
         String userId = tokenUtils.retreiveUserId();
 
-        ResponseModel<InventoryDTO> response = inventoryService.findByUserId(userId);
+        ResponseModel<Inventory> response = inventoryService.findByUserId(userId);
 
         if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -110,6 +111,9 @@ public class InventoryController {
         String userId = tokenUtils.retreiveUserId();
 
         category.setId(categoryId);
+
+        System.err.println("DEPUIS CONTROLLEUR");
+        System.err.println(category);
         ResponseModel<EquipmentCategory> response = inventoryService.modifyCategory(userId, category);
 
         if(response.getCode().equals("200")){

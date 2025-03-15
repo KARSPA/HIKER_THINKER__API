@@ -4,6 +4,7 @@ import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
+import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +13,7 @@ import java.util.List;
 @Service
 public interface InventoryService {
 
-    ResponseModel<InventoryDTO> findByUserId(String userId); //Récupérer l'inventaire d'un utilisateur
+    ResponseModel<Inventory> findByUserId(String userId); //Récupérer l'inventaire d'un utilisateur
 
     ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO); // Ajouter un équipement à l'inventaire
 

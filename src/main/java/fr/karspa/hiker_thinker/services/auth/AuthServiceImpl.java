@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
 
         //TODO : VALIDATION DU DTO ??
 
-        EquipmentCategory defaultCat = new EquipmentCategory("DEFAULT", "Sans catégorie", "no_icon");
+        EquipmentCategory defaultCat = new EquipmentCategory("DEFAULT", "Sans catégorie", "no_icon", 100);
 
         User user = User.builder()
             .email(registerDTO.getEmail())
@@ -88,7 +88,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public ResponseModel<LoginResponseDTO> verifyConnected(String userId) {
+    public ResponseModel<LoginResponseDTO> verifyConnected(String token) {
+        String userId = jwtTokenProvider.getUserId(token);
 
         User user = userRepository.findById(userId).orElse(null);
 
@@ -101,6 +102,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .jwt(token)
                 .build();
 
         return ResponseModel.buildResponse("200", "Informations de l'utilisateur trouvé avec succès.", loginResponseDTO);

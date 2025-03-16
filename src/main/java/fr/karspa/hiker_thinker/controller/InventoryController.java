@@ -52,6 +52,19 @@ public class InventoryController {
         }
     }
 
+    @GetMapping("/equipments/{equipmentId}")
+    public ResponseEntity<ResponseModel<Equipment>> getEquipment(@PathVariable String equipmentId){
+        String userId = tokenUtils.retreiveUserId();
+
+        ResponseModel<Equipment> response = inventoryService.getEquipmentById(userId, equipmentId);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
     @PatchMapping("/equipments/{equipmentId}")
     public ResponseEntity<ResponseModel<Equipment>> modifyEquipment(@PathVariable String equipmentId, @RequestBody Equipment equipment){
         String userId = tokenUtils.retreiveUserId();

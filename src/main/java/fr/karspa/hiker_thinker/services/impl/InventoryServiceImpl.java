@@ -40,6 +40,17 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
+    public ResponseModel<Equipment> getEquipmentById(String userId, String equipmentId) {
+
+        Equipment equipment = inventoryRepository.findEquipmentById(userId, equipmentId);
+
+        if(equipment == null)
+            return ResponseModel.buildResponse("404", "Aucun équipement trouvé.", null);
+
+        return ResponseModel.buildResponse("200", "Équipement récupéré avec succès.", equipment);
+    }
+
+    @Override
     public ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO) {
 
         // Créer les instance nécessaires aux vérifications et enregistrement.

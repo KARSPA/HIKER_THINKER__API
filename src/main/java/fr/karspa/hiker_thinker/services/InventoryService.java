@@ -15,6 +15,8 @@ public interface InventoryService {
 
     ResponseModel<Inventory> findByUserId(String userId); //Récupérer l'inventaire d'un utilisateur
 
+    ResponseModel<Equipment> getEquipmentById(String userId, String equipmentId);
+
     ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO); // Ajouter un équipement à l'inventaire
 
     ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment); // Modifier un équipement de l'inventaire

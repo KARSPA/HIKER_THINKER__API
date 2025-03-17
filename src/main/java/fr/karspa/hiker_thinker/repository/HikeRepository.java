@@ -84,8 +84,8 @@ public class HikeRepository {
 
     }
 
-    private boolean checkHikeTitleAvailableCreate(String userId, Hike hike){
-        Query query = new Query(Criteria.where("ownerId").is(hike.getOwnerId())
+    private boolean checkHikeTitleAvailableCreate(String ownerId, Hike hike){
+        Query query = new Query(Criteria.where("ownerId").is(ownerId)
                 .and("title").is(hike.getTitle()));
 
         Document doc = mongoTemplate.findOne(query, Document.class, "hikes");

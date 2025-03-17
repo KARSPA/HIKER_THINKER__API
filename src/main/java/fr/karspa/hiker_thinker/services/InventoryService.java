@@ -21,7 +21,7 @@ public interface InventoryService {
 
     ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment); // Modifier un équipement de l'inventaire
 
-    ResponseModel<Equipment> removeEquipment(String userId, String equipmentId); // Supprimer un équipement de l'inventaire
+    ResponseModel<String> removeEquipment(String userId, String equipmentId); // Supprimer un équipement de l'inventaire
 
     ResponseModel<List<EquipmentCategory>> getCategories(String userId);
 

@@ -80,10 +80,10 @@ public class InventoryController {
     }
 
     @DeleteMapping("/equipments/{equipmentId}")
-    public ResponseEntity<ResponseModel<Equipment>> removeEquipment(@PathVariable String equipmentId){
+    public ResponseEntity<ResponseModel<String>> removeEquipment(@PathVariable String equipmentId){
         String userId = tokenUtils.retreiveUserId();
 
-        ResponseModel<Equipment> response = inventoryService.removeEquipment(userId, equipmentId);
+        ResponseModel<String> response = inventoryService.removeEquipment(userId, equipmentId);
 
         if(response.getCode().equals("204")){
             return ResponseEntity.status(HttpStatus.OK).body(response);

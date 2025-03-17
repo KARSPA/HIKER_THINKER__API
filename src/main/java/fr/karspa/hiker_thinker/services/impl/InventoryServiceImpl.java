@@ -139,7 +139,7 @@ public class InventoryServiceImpl implements InventoryService {
 
 
     @Override
-    public ResponseModel<Equipment> removeEquipment(String userId, String equipmentId) {
+    public ResponseModel<String> removeEquipment(String userId, String equipmentId) {
 
         boolean doesEquipmentExists = this.checkEquipmentExistsById(userId, equipmentId);
 
@@ -151,7 +151,7 @@ public class InventoryServiceImpl implements InventoryService {
         UpdateResult result = inventoryRepository.removeEquipment(userId, equipmentId);
 
         if (result.getMatchedCount() > 0) {
-            return ResponseModel.buildResponse("204", "Équipement supprimé avec succès.", null);
+            return ResponseModel.buildResponse("204", "Équipement supprimé avec succès.", equipmentId);
         } else {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }

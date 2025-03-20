@@ -187,7 +187,7 @@ public class HikeServiceImpl implements HikeService {
     }
 
     @Override
-    public ResponseModel<Equipment> removeEquipment(String ownerId, String hikeId, String equipmentId) {
+    public ResponseModel<String> removeEquipment(String ownerId, String hikeId, String equipmentId) {
 
         boolean doesEquipmentExists = hikeRepository.checkEquipmentExistsById(ownerId, hikeId, equipmentId);
 
@@ -199,7 +199,7 @@ public class HikeServiceImpl implements HikeService {
         UpdateResult result = hikeRepository.removeEquipmentFromEquipmentList(ownerId, hikeId, equipmentId);
 
         if (result.getMatchedCount() > 0) {
-            return ResponseModel.buildResponse("204", "Équipement supprimé avec succès.", null);
+            return ResponseModel.buildResponse("204", "Équipement supprimé avec succès.", equipmentId);
         } else {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }

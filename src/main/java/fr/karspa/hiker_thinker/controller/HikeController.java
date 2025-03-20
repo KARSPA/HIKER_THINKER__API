@@ -125,10 +125,10 @@ public class HikeController {
     }
 
     @DeleteMapping("/{hikeId}/equipments/{equipmentId}")
-    public ResponseEntity<ResponseModel<Equipment>> modifyEquipmentCategory(@PathVariable(name = "hikeId") String hikeId, @PathVariable(name = "equipmentId") String equipmentId) {
+    public ResponseEntity<ResponseModel<String>> modifyEquipmentCategory(@PathVariable(name = "hikeId") String hikeId, @PathVariable(name = "equipmentId") String equipmentId) {
         String userId = tokenUtils.retreiveUserId();
 
-        ResponseModel<Equipment> response = hikeService.removeEquipment(userId, hikeId, equipmentId);
+        ResponseModel<String> response = hikeService.removeEquipment(userId, hikeId, equipmentId);
 
         if(response.getCode().equals("204")){
             return ResponseEntity.status(HttpStatus.OK).body(response);

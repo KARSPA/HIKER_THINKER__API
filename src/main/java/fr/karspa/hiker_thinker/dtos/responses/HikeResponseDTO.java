@@ -1,6 +1,7 @@
 package fr.karspa.hiker_thinker.dtos.responses;
 
 import fr.karspa.hiker_thinker.model.Equipment;
+import fr.karspa.hiker_thinker.model.Inventory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,5 +30,5 @@ public class HikeResponseDTO {
 
     private Date date;
 
-    private InventoryDTO inventory;
+    private Inventory inventory;
 }

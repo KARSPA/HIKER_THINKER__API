@@ -237,14 +237,13 @@ public class HikeRepository {
 
         Update update = new Update().pull("inventory.categories", new Document("_id", categoryId));
 
-        return mongoTemplate.updateFirst(query, update, User.class);
+        return mongoTemplate.updateFirst(query, update, Hike.class);
     }
 
 
     public List<Equipment> findEquipmentsByCategory(String ownerId, String hikeId, String categoryId){
 
         Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
-        query.fields().include("inventory.equipments");
 
         Hike hike = mongoTemplate.findOne(query, Hike.class);
         if (hike == null || hike.getInventory() == null || hike.getInventory().getEquipments() == null) {

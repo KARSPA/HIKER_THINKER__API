@@ -39,6 +39,10 @@ public class HikeServiceImpl implements HikeService {
     public ResponseModel<HikeResponseDTO> findByHikeId(String ownerId, String hikeId) {
         Hike hike = hikeRepository.findOne(ownerId, hikeId);
 
+        if (hike == null) {
+            return ResponseModel.buildResponse("404", "Aucune randonnée trouvée.", null);
+        }
+
         //Modifier la structure de l'inventaire pour faciliter l'affichage coté front
         return ResponseModel.buildResponse("200", "Randonnée récupérée avec succès", hike.toDTO());
     }

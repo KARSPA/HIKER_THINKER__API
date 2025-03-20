@@ -49,7 +49,7 @@ public class Hike {
                 .duration(duration)
                 .durationUnit(durationUnit)
                 .date(date)
-                .inventory(InventoryUtils.restructureInventory(inventory))
+                .inventory(inventory)
                 .build();
     }
 }

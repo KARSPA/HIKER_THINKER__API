@@ -1,6 +1,7 @@
 package fr.karspa.hiker_thinker.repository;
 
 
+import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.HikeDTO;
@@ -57,7 +58,7 @@ public class HikeRepository {
         update.set("duration", hike.getDuration());
         update.set("durationUnit", hike.getDurationUnit());
         update.set("date", hike.getDate());
-        // Ne pas mettre à jour ownerId, modelId ou inventory !
+        // Ne pas mettre à jour ownerId, modelId, inventory ou totalWeight !
 
         return mongoTemplate.updateFirst(query, update, Hike.class);
     }
@@ -68,6 +69,7 @@ public class HikeRepository {
 
         return mongoTemplate.findAndRemove(query, Hike.class);
     }
+
 
 
 
@@ -112,22 +114,18 @@ public class HikeRepository {
         return (doc != null);
     }
 
-    public boolean checkAvailableEquipmentName(String ownerId, String hikeId, Equipment equipment){
-        Query query = new Query(Criteria.where("ownerId").is(ownerId)
-                .and("_id").is(hikeId)
-                .and("inventory.equipments").elemMatch(Criteria.where("name").is(equipment.getName())));
-
-        Document doc = mongoTemplate.findOne(query, Document.class, "hikes");
-
-        return (doc == null);
-    }
 
     public UpdateResult addEquipmentToEquipmentList(String ownerId, String hikeId, Equipment equipment) {
-        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
 
-        Update update = new Update().push("inventory.equipments", equipment);
-
-        return mongoTemplate.updateFirst(query, update, Hike.class);
+        return mongoTemplate.update(Hike.class)
+                .matching(Criteria.where("ownerId").is(ownerId)
+                        .and("_id").is(hikeId)
+                        .and("inventory.categories._id").is(equipment.getCategoryId()))
+                .apply(new Update()
+                        .push("inventory.equipments", equipment)
+                        .inc("totalWeight", equipment.getWeight())
+                        .inc("inventory.categories.$.accumulatedWeight", equipment.getWeight()))
+                .first();
     }
 
     public UpdateResult removeEquipmentFromEquipmentList(String ownerId, String hikeId, String equipmentId) {

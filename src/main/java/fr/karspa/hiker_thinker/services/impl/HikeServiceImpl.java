@@ -142,10 +142,12 @@ public class HikeServiceImpl implements HikeService {
 
         // Vérifier si ok et Modifier sa catégorie par celle que l'on souhaite.
         sourceEquipment.setCategoryId(hikeEquipmentDTO.getCategoryId());
-        sourceEquipment.setSourceId(hikeEquipmentDTO.getSourceId()); //Doublon avec l'id de l'équipement mais osef TODO
+        sourceEquipment.setSourceId(hikeEquipmentDTO.getSourceId()); //Doublon avec l'id de l'équipement mais osef
 
         // Ajouter l'équipement dans l'inventaire de la randonnée.
         UpdateResult result = hikeRepository.addEquipmentToEquipmentList(ownerId, hikeId, sourceEquipment);
+
+        // TODO : Ajouter le poids de l'équipement au total de la randonnée et à celui de la catégorie.
 
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", sourceEquipment);
@@ -179,6 +181,9 @@ public class HikeServiceImpl implements HikeService {
         // Modifier la catégorie de l'équipement et sauvegarder en base.
         UpdateResult result = hikeRepository.modifyEquipmentCategory(ownerId, hikeId, hikeEquipmentDTO);
 
+        // TODO : Modifier le poids de l'équipement du total de la randonnée et celui de la catégorie.
+
+
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("200", "Catégorie de l'équipement modifiée avec succès.", hikeEquipmentDTO);
         } else {
@@ -197,6 +202,8 @@ public class HikeServiceImpl implements HikeService {
 
         // Supprimer l'élément (en utilisant l'equipmentId passé en paramètre).
         UpdateResult result = hikeRepository.removeEquipmentFromEquipmentList(ownerId, hikeId, equipmentId);
+
+        // TODO : Supprimer le poids de l'équipement du total de la randonnée et celui de la catégorie.
 
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("204", "Équipement supprimé avec succès.", equipmentId);

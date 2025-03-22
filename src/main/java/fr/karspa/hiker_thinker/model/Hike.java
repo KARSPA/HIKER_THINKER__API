@@ -37,6 +37,8 @@ public class Hike {
     private String ownerId;
     private String modelId;
 
+    private int totalWeight;
+
 
     public HikeResponseDTO toDTO() {
         return HikeResponseDTO.builder()
@@ -50,6 +52,7 @@ public class Hike {
                 .durationUnit(durationUnit)
                 .date(date)
                 .inventory(inventory)
+                .totalWeight(totalWeight)
                 .build();
     }
 }

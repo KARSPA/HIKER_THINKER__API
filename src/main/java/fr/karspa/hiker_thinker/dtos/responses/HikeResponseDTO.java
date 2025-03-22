@@ -31,4 +31,6 @@ public class HikeResponseDTO {
     private Date date;
 
     private Inventory inventory;
+
+    private int totalWeight;
 }

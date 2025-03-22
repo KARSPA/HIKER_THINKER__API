@@ -16,4 +16,6 @@ public class EquipmentCategory {
     private String icon;
 
     private int order;
+
+    private int accumulatedWeight;
 }

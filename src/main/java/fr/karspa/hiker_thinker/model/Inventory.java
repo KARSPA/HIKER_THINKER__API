@@ -21,7 +21,7 @@ public class Inventory {
 
     public static Inventory getDefaultInventory(){
 
-        EquipmentCategory defaultCat = new EquipmentCategory("DEFAULT", "Sans catégorie", "no_icon", 100);
+        EquipmentCategory defaultCat = new EquipmentCategory("DEFAULT", "Sans catégorie", "no_icon", 100, 0);
 
         return new Inventory(List.of(defaultCat), new ArrayList<>());
 

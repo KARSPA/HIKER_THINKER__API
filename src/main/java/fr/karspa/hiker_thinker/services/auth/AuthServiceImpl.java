@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
 
         //TODO : VALIDATION DU DTO ??
 
-        EquipmentCategory defaultCat = new EquipmentCategory("DEFAULT", "Sans catégorie", "no_icon", 100);
+        EquipmentCategory defaultCat = new EquipmentCategory("DEFAULT", "Sans catégorie", "no_icon", 100, 0);
 
         User user = User.builder()
             .email(registerDTO.getEmail())

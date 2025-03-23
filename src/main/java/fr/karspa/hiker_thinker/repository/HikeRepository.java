@@ -1,6 +1,7 @@
 package fr.karspa.hiker_thinker.repository;
 
 
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
@@ -12,6 +13,8 @@ import fr.karspa.hiker_thinker.model.Hike;
 import fr.karspa.hiker_thinker.model.User;
 import lombok.AllArgsConstructor;
 import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -128,12 +131,18 @@ public class HikeRepository {
                 .first();
     }
 
-    public UpdateResult removeEquipmentFromEquipmentList(String ownerId, String hikeId, String equipmentId) {
-        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
+    public UpdateResult removeEquipmentFromEquipmentList(String ownerId, String hikeId, Equipment equipment) {
 
-        Update update = new Update().pull("inventory.equipments", new Document("_id", equipmentId));
-
-        return mongoTemplate.updateFirst(query, update, Hike.class);
+        return mongoTemplate.update(Hike.class)
+                .matching(Criteria.where("ownerId").is(ownerId)
+                        .and("_id").is(hikeId)
+                        .and("inventory.equipments._id").is(equipment.getId())
+                        .and("inventory.categories._id").is(equipment.getCategoryId()))
+                .apply(new Update()
+                        .pull("inventory.equipments", new Document("_id", equipment.getId()))
+                        .inc("totalWeight", -equipment.getWeight())
+                        .inc("inventory.categories.$.accumulatedWeight", -equipment.getWeight()))
+                .first();
     }
 
     public UpdateResult addCategoryToCategoryList(String ownerId, String hikeId, EquipmentCategory category) {
@@ -174,19 +183,44 @@ public class HikeRepository {
         return (doc != null);
     }
 
+    public Equipment getEquipmentById(String ownerId, String hikeId, String equipmentId) {
 
-    public UpdateResult modifyEquipmentCategory(String ownerId, String hikeId, HikeEquipmentDTO equipment) {
-        Query query = new Query(
-                Criteria.where("ownerId").is(ownerId)
-                        .and("_id").is(hikeId)
-                        .and("inventory.equipments").elemMatch(
-                                Criteria.where("_id").is(equipment.getSourceId())
-                        ));
+        Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
 
-        Update update = new Update();
-        update.set("inventory.equipments.$.categoryId", equipment.getCategoryId());
+        Hike hike = mongoTemplate.findOne(query, Hike.class);
 
-        return mongoTemplate.updateFirst(query, update, Hike.class);
+        if (hike == null || hike.getInventory() == null || hike.getInventory().getEquipments() == null) {
+            return null;
+        }
+
+        return hike.getInventory().getEquipments().stream()
+                .filter(e -> equipmentId.equals(e.getId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+
+
+
+    public UpdateResult modifyEquipmentCategory(String ownerId, String hikeId, HikeEquipmentDTO dto, Equipment previousEquipment) {
+        Document queryDoc = new Document("ownerId", ownerId)
+                .append("_id", new ObjectId(hikeId));
+
+        Document updateDoc = new Document();
+        updateDoc.put("$set", new Document("inventory.equipments.$[eq].categoryId", dto.getCategoryId()));
+        updateDoc.put("$inc", new Document("inventory.categories.$[newCat].accumulatedWeight", previousEquipment.getWeight())
+                .append("inventory.categories.$[oldCat].accumulatedWeight", -previousEquipment.getWeight()));
+
+        List<Document> arrayFilters = List.of(
+                new Document("eq._id", dto.getSourceId()),
+                new Document("newCat._id", dto.getCategoryId()),
+                new Document("oldCat._id", previousEquipment.getCategoryId())
+        );
+        UpdateOptions options = new UpdateOptions().arrayFilters(arrayFilters);
+
+        MongoCollection<Document> collection = mongoTemplate.getCollection("hikes");
+
+        return collection.updateOne(queryDoc, updateDoc, options);
     }
 
 

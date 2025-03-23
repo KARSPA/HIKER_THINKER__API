@@ -193,6 +193,7 @@ public class HikeServiceImpl implements HikeService {
 
         Equipment correspondingEquipment = hikeRepository.getEquipmentById(ownerId, hikeId, equipmentId);
 
+        System.err.println(correspondingEquipment);
         if(correspondingEquipment == null){
             return ResponseModel.buildResponse("404", "L'équipement avec cet identifiant n'existe pas dans cette randonnée.", null);
         }

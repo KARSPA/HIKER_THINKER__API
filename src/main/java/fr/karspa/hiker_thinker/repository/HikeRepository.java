@@ -133,16 +133,23 @@ public class HikeRepository {
 
     public UpdateResult removeEquipmentFromEquipmentList(String ownerId, String hikeId, Equipment equipment) {
 
-        return mongoTemplate.update(Hike.class)
-                .matching(Criteria.where("ownerId").is(ownerId)
-                        .and("_id").is(hikeId)
-                        .and("inventory.equipments._id").is(equipment.getId())
-                        .and("inventory.categories._id").is(equipment.getCategoryId()))
-                .apply(new Update()
-                        .pull("inventory.equipments", new Document("_id", equipment.getId()))
-                        .inc("totalWeight", -equipment.getWeight())
-                        .inc("inventory.categories.$.accumulatedWeight", -equipment.getWeight()))
-                .first();
+        // Construire le document de requête (conversion de hikeId si nécessaire)
+        Document queryDoc = new Document("ownerId", ownerId)
+                .append("_id", new ObjectId(hikeId)); // assurez-vous que hikeId est un ObjectId ou convertissez-le si besoin
+
+
+        Document updateDoc = new Document();
+        updateDoc.put("$inc", new Document("inventory.categories.$[cat].accumulatedWeight", -equipment.getWeight())
+                .append("totalWeight", -equipment.getWeight()));
+        updateDoc.put("$pull", new Document("inventory.equipments", new Document("_id", equipment.getId())));
+
+        List<Document> arrayFilters = List.of(new Document("cat._id", equipment.getCategoryId()));
+        UpdateOptions options = new UpdateOptions().arrayFilters(arrayFilters);
+
+        MongoCollection<Document> collection = mongoTemplate.getCollection("hikes");
+
+        return collection.updateOne(queryDoc, updateDoc, options);
+
     }
 
     public UpdateResult addCategoryToCategoryList(String ownerId, String hikeId, EquipmentCategory category) {

@@ -125,7 +125,7 @@ public class HikeController {
     }
 
     @DeleteMapping("/{hikeId}/equipments/{equipmentId}")
-    public ResponseEntity<ResponseModel<String>> modifyEquipmentCategory(@PathVariable(name = "hikeId") String hikeId, @PathVariable(name = "equipmentId") String equipmentId) {
+    public ResponseEntity<ResponseModel<String>> removeEquipment(@PathVariable(name = "hikeId") String hikeId, @PathVariable(name = "equipmentId") String equipmentId) {
         String userId = tokenUtils.retreiveUserId();
 
         ResponseModel<String> response = hikeService.removeEquipment(userId, hikeId, equipmentId);

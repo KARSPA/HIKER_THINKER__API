@@ -1,14 +1,19 @@
 package fr.karspa.hiker_thinker.config.filters;
 
 import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.karspa.hiker_thinker.services.auth.CustomUserDetailsService;
 import fr.karspa.hiker_thinker.services.auth.JwtTokenProvider;
+import fr.karspa.hiker_thinker.utils.ResponseModel;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,26 +39,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = getTokenFromRequest(request);
+        try{
+            if(StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
+                String email = jwtTokenProvider.getUsername(token);
+                String userId = jwtTokenProvider.getUserId(token);
 
-        if(StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
-            String email = jwtTokenProvider.getUsername(token);
-            String userId = jwtTokenProvider.getUserId(token);
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-            UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                //Détails personnalisés dans le authToken de l'application pour la suite de cette requête.
+                Map<String, Object> customDetails = new HashMap<>();
+                customDetails.put("userId", userId);
+                customDetails.put("requestInfo", new WebAuthenticationDetailsSource().buildDetails(request));
 
-            //Détails personnalisés dans le authToken de l'application pour la suite de cette requête.
-            Map<String, Object> customDetails = new HashMap<>();
-            customDetails.put("userId", userId);
-            customDetails.put("requestInfo", new WebAuthenticationDetailsSource().buildDetails(request));
+                authToken.setDetails(customDetails);
 
-            authToken.setDetails(customDetails);
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
 
-            SecurityContextHolder.getContext().setAuthentication(authToken);
+            filterChain.doFilter(request, response);
+
+        }catch(ExpiredJwtException ex){
+
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ResponseModel<Object> res = ResponseModel.buildResponse("800", "Authentification expirée. Veuillez vous reconnecter.", null);
+            new ObjectMapper().writeValue(response.getWriter(), res);
         }
 
-        filterChain.doFilter(request, response);
     }
 
 

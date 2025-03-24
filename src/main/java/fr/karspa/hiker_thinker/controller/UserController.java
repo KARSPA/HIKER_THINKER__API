@@ -44,7 +44,7 @@ public class UserController {
         if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 
@@ -59,7 +59,7 @@ public class UserController {
         if (response.getCode().equals("200")) {
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
     }

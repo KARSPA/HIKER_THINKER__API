@@ -1,17 +1,13 @@
 package fr.karspa.hiker_thinker.repository;
 
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
-import fr.karspa.hiker_thinker.utils.InventoryUtils;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -205,41 +201,14 @@ public class InventoryRepository {
                 .collect(Collectors.toList());
     }
 
-    public List<Equipment> findEquipmentsByCategoryBIS(String userId, String categoryId){
-        // Pipeline d'agrégation :
-        Aggregation aggregation = Aggregation.newAggregation(
-                // Filtrer par utilisateur
-                Aggregation.match(Criteria.where("_id").is(userId)),
-                // Dans le $project, utiliser $filter pour ne garder que les équipements dont le categoryId correspond
-                Aggregation.project()
-                        .and(ArrayOperators.Filter.filter("inventory.equipments")
-                                        .as("equipment")
-                                        .by(ComparisonOperators.Eq.valueOf("$$equipment.categoryId").equalToValue(categoryId))
-                        ).as("filteredEquipments")
-        );
-
-        AggregationResults<Document> results = mongoTemplate.aggregate(aggregation, "users", Document.class);
-        Document resultDoc = results.getUniqueMappedResult();
-        if (resultDoc == null) {
-            return Collections.emptyList();
-        }
-
-        List<Document> equipmentsDocs = (List<Document>) resultDoc.get("filteredEquipments");
-        List<Equipment> equipments = new ArrayList<>();
-        for (Document doc : equipmentsDocs) {
-            // Utilise le convertisseur de mongoTemplate pour mapper le Document vers Equipment
-            Equipment eq = mongoTemplate.getConverter().read(Equipment.class, doc);
-            equipments.add(eq);
-        }
-        return equipments;
-    }
-
 
     public String getCategoryIdByCategoryName(String userId, String categoryName) {
         Query query = new Query(
                 Criteria.where("_id").is(userId)
                         .and("inventory.categories").elemMatch(
-                                Criteria.where("name").is(categoryName)));
+                                Criteria.where("name").is(categoryName)
+                        )
+        );
         query.fields().include("inventory.categories");
 
         Document doc = mongoTemplate.findOne(query, Document.class, "users");
@@ -253,10 +222,18 @@ public class InventoryRepository {
             return null;
         }
 
-        // La liste des catégories est supposée être stockée sous forme de List<Document>
-        List<Document> categories = (List<Document>) inventoryDoc.get("categories");
-        if (categories == null) {
+        // Vérifier que le champ "categories" est bien une List
+        Object categoriesObj = inventoryDoc.get("categories");
+        if (!(categoriesObj instanceof List<?> rawList)) {
             return null;
+        }
+
+        List<Document> categories = new ArrayList<>();
+        // Itérer sur la liste et ne conserver que les instances de Document (éviter l'erreur de compilation xlint ...)
+        for (Object o : rawList) {
+            if (o instanceof Document) {
+                categories.add((Document) o);
+            }
         }
 
         // Parcourir la liste pour trouver la catégorie dont le "name" correspond

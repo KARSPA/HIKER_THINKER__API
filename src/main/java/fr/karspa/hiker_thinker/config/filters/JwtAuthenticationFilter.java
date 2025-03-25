@@ -6,6 +6,7 @@ import fr.karspa.hiker_thinker.services.auth.CustomUserDetailsService;
 import fr.karspa.hiker_thinker.services.auth.JwtTokenProvider;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,11 +61,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
 
-        }catch(ExpiredJwtException ex){
+        }catch(ExpiredJwtException | SignatureException ex){
 
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            ResponseModel<Object> res = ResponseModel.buildResponse("800", "Authentification expirée. Veuillez vous reconnecter.", null);
+            ResponseModel<Object> res = ResponseModel.buildResponse("800", "Authentification échouée. Veuillez vous reconnecter.", null);
             new ObjectMapper().writeValue(response.getWriter(), res);
         }
 

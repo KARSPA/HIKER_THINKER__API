@@ -4,10 +4,11 @@ import fr.karspa.hiker_thinker.dtos.LoginDTO;
 import fr.karspa.hiker_thinker.dtos.RegisterDTO;
 import fr.karspa.hiker_thinker.dtos.responses.LoginResponseDTO;
 import fr.karspa.hiker_thinker.dtos.responses.RegisterResponseDTO;
-import fr.karspa.hiker_thinker.repository.AuthUserRepository;
 import fr.karspa.hiker_thinker.services.auth.AuthService;
+import fr.karspa.hiker_thinker.services.auth.AuthServiceImpl;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
+
     private AuthService authService;
 
     public AuthController(AuthService authService) {
@@ -28,6 +31,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ResponseModel<LoginResponseDTO>> login(@RequestBody LoginDTO loginDTO) {
+        log.info("POST /auth/login => Tentative de connexion de : {}", loginDTO.getEmail());
 
         ResponseModel<LoginResponseDTO> response = authService.login(loginDTO);
 
@@ -40,6 +44,8 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<ResponseModel<RegisterResponseDTO>> register(@RequestBody RegisterDTO registerDTO) {
+        log.info("POST /auth/register => Tentative de création de compte de : {}", registerDTO.getEmail());
+
         ResponseModel<RegisterResponseDTO> response = authService.register(registerDTO);
 
         if(response.getCode().equals("201")){

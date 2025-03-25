@@ -1,9 +1,7 @@
 package fr.karspa.hiker_thinker.controller;
 
-import fr.karspa.hiker_thinker.dtos.LoginDTO;
 import fr.karspa.hiker_thinker.dtos.ModifyUserDTO;
 import fr.karspa.hiker_thinker.dtos.responses.LoginResponseDTO;
-import fr.karspa.hiker_thinker.services.UserService;
 import fr.karspa.hiker_thinker.services.auth.AuthService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import fr.karspa.hiker_thinker.utils.TokenUtils;

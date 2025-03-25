@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+fr.karspa.hiker_thinker.config.FileSecretsEnvironmentPostProcessor

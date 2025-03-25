@@ -13,6 +13,8 @@ import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.RandomGenerator;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +24,8 @@ import java.util.UUID;
 @Service
 public class InventoryServiceImpl implements InventoryService {
 
+    private static final Logger log = LoggerFactory.getLogger(InventoryServiceImpl.class);
+
     private InventoryRepository inventoryRepository;
 
     public InventoryServiceImpl(InventoryRepository inventoryRepository) {
@@ -30,6 +34,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<Inventory> findByUserId(String userId) {
+        log.info("Récupération de l'inventaire de l'utilisateur : {}", userId);
 
         var inventory = inventoryRepository.getInventory(userId);
 
@@ -41,6 +46,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<Equipment> getEquipmentById(String userId, String equipmentId) {
+        log.info("Récupération d'un équipement ({}) de l'inventaire de l'utilisateur : {}", equipmentId, userId);
 
         Equipment equipment = inventoryRepository.findEquipmentById(userId, equipmentId);
 
@@ -52,6 +58,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO) {
+        log.info("Ajout d'un équipement à l'inventaire de l'utilisateur : {}", userId);
 
         // Créer les instance nécessaires aux vérifications et enregistrement.
         Equipment equipment = equipmentDTO.mapToEntity();
@@ -106,6 +113,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment) {
+        log.info("Modification d'un équipement ({}) à l'inventaire de l'utilisateur : {}", equipment.getId(), userId);
 
         //Vérifier que l'équipement avec cet id existe dans l'inventaire.
         boolean doesIdExists = this.checkEquipmentExistsById(userId, equipment.getId());
@@ -140,6 +148,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<String> removeEquipment(String userId, String equipmentId) {
+        log.info("Suppression d'un équipement ({}) à l'inventaire de l'utilisateur : {}", equipmentId, userId);
 
         boolean doesEquipmentExists = this.checkEquipmentExistsById(userId, equipmentId);
 
@@ -160,6 +169,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<EquipmentCategory> addCategory(String userId, EquipmentCategory category){
+        log.info("Ajout d'une catégorie à l'inventaire de l'utilisateur : {}", userId);
 
         boolean doesCategoryExist = inventoryRepository.checkCategoryExistsByName(userId, category.getName());
         if(doesCategoryExist){
@@ -178,6 +188,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<EquipmentCategory> modifyCategory(String userId, EquipmentCategory category){
+        log.info("Modification d'une catégorie ({}) de l'inventaire de l'utilisateur : {}", category.getId(), userId);
 
         boolean doesCategoryExist = inventoryRepository.checkCategoryExistsById(userId, category.getId());
         if(!doesCategoryExist){
@@ -195,6 +206,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<EquipmentCategory> removeCategory(String userId, String categoryId){
+        log.info("Modification d'un équipement ({}) de l'inventaire de l'utilisateur : {}", categoryId, userId);
 
         //Vérifier si id = "DEFAULT" (pas supprimable dans ce cas)
         if (Objects.equals(categoryId, "DEFAULT")){
@@ -223,6 +235,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public ResponseModel<List<EquipmentCategory>> getCategories(String userId) {
+        log.info("Récupération des catégories de l'inventaire de l'utilisateur : {}", userId);
         //Récupérer l'inventaire dans la BDD
         var categories = inventoryRepository.getCategories(userId);
 

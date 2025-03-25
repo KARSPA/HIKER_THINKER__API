@@ -97,7 +97,6 @@ public class InventoryRepository {
 
     public UpdateResult modifyCategoryInCategoryList(String userId, EquipmentCategory category) {
 
-        System.out.println(category);
         Query query = new Query(
                 Criteria.where("_id").is(userId)
                         .and("inventory.categories._id").is(category.getId())

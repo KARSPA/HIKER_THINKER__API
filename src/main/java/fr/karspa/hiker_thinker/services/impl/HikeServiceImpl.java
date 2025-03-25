@@ -1,7 +1,6 @@
 package fr.karspa.hiker_thinker.services.impl;
 
 import com.mongodb.client.result.UpdateResult;
-import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.HikeEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
@@ -14,6 +13,8 @@ import fr.karspa.hiker_thinker.services.HikeService;
 import fr.karspa.hiker_thinker.utils.RandomGenerator;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,11 +24,14 @@ import java.util.Objects;
 @AllArgsConstructor
 public class HikeServiceImpl implements HikeService {
 
+    private static final Logger log = LoggerFactory.getLogger(HikeServiceImpl.class);
+
     private HikeRepository hikeRepository;
     private InventoryRepository inventoryRepository;
 
     @Override
     public ResponseModel<List<Hike>> findAll(String ownerId, boolean withInventory) {
+        log.info("Récupération des randonnées de l'utilisateur : {}", ownerId);
 
         // Récupérer tous les documents de "hikes" avec le ownerId passé en paramètre.
         List<Hike> hikes = hikeRepository.findAll(ownerId, withInventory);
@@ -37,6 +41,8 @@ public class HikeServiceImpl implements HikeService {
 
     @Override
     public ResponseModel<HikeResponseDTO> findByHikeId(String ownerId, String hikeId) {
+        log.info("Récupération d'une randonnée ({}) de l'utilisateur : {}", hikeId, ownerId);
+
         Hike hike = hikeRepository.findOne(ownerId, hikeId);
 
         if (hike == null) {
@@ -49,6 +55,7 @@ public class HikeServiceImpl implements HikeService {
 
     @Override
     public ResponseModel<Hike> createOne(String ownerId, Hike hike) {
+        log.info("Création d'une randonnée par l'utilisateur : {}", ownerId);
 
         // Vérifier le titre de la randonnée (unique)
         boolean isTitleAvailable = checkHikeTitleAvailable(ownerId, hike);
@@ -78,6 +85,9 @@ public class HikeServiceImpl implements HikeService {
 
         // TODO : VALIDATION DES VALEURS DES CHAMPS (NOT NULL, NOT BLANK ETC)
 
+        log.info("Modification d'une randonnée par l'utilisateur : {}", ownerId);
+
+
         // Vérifier que la randonnée avec l'identifiant existe pour cet utilisateur
         boolean doesHikeExists = (hike.getId() != null) && this.checkHikeExistsById(ownerId, hike.getId());
 
@@ -96,12 +106,14 @@ public class HikeServiceImpl implements HikeService {
         if (result.getModifiedCount() > 0) {
             return ResponseModel.buildResponse("200", "Randonnée modifiée avec succès.", hike);
         } else {
+            log.error("Erreur lors de la modification de la randonnée : {} , par l'utilisateur : {}", hike.getId(), ownerId);
             return ResponseModel.buildResponse("500", "Échec de la modification de la randonnée.", null);
         }
     }
 
     @Override
     public ResponseModel<Hike> deleteOne(String ownerId, String hikeId) {
+        log.info("Suppression d'une randonnée par l'utilisateur : {}", ownerId);
 
         boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
         if(!doesHikeExists) {
@@ -115,6 +127,7 @@ public class HikeServiceImpl implements HikeService {
 
     @Override
     public ResponseModel<Equipment> addEquipment(String ownerId, String hikeId, HikeEquipmentDTO hikeEquipmentDTO) {
+        log.info("Ajout d'un équipement à une randonnée ({}) par l'utilisateur : {}", hikeId, ownerId);
 
         //Vérifier que la randonnée existe :
         boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
@@ -152,13 +165,14 @@ public class HikeServiceImpl implements HikeService {
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("201", "Équipement ajouté avec succès.", sourceEquipment);
         } else {
+            log.error("Erreur lors de l'ajout d'un équipement à la randonnée : {} , par l'utilisateur : {}", hikeId, ownerId);
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
     }
 
     @Override
     public ResponseModel<HikeEquipmentDTO> modifyEquipment(String ownerId, String hikeId, HikeEquipmentDTO hikeEquipmentDTO) {
-        //Méthode utilisée pour modifier la catégorie d'un équipement
+        log.info("Modification d'un équipement ({}) à une randonnée ({}) par l'utilisateur : {}", hikeEquipmentDTO.getSourceId(), hikeId, ownerId);
 
         // Vérifier que la randonnée existe
         boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
@@ -184,12 +198,14 @@ public class HikeServiceImpl implements HikeService {
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("200", "Catégorie de l'équipement modifiée avec succès.", hikeEquipmentDTO);
         } else {
+            log.error("Erreur lors de la modification d'un équipement ({}) à la randonnée : {} , par l'utilisateur : {}", hikeEquipmentDTO.getSourceId(), hikeId, ownerId);
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
     }
 
     @Override
     public ResponseModel<String> removeEquipment(String ownerId, String hikeId, String equipmentId) {
+        log.info("Suppression d'un équipement ({}) d'une randonnée ({}) par l'utilisateur : {}", equipmentId, hikeId, ownerId);
 
         Equipment correspondingEquipment = hikeRepository.getEquipmentById(ownerId, hikeId, equipmentId);
         
@@ -202,12 +218,14 @@ public class HikeServiceImpl implements HikeService {
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("204", "Équipement supprimé avec succès.", equipmentId);
         } else {
+            log.error("Erreur lors de la suppression d'un équipement ({}) à la randonnée : {} , par l'utilisateur : {}", equipmentId, hikeId, ownerId);
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
     }
 
     @Override
     public ResponseModel<List<EquipmentCategory>> getCategories(String ownerId, String hikeId) {
+        log.info("Récupération des catégories d'une randonnée ({}) par l'utilisateur : {}", hikeId, ownerId);
 
         // Vérifier que la randonnée existe
         boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
@@ -218,16 +236,12 @@ public class HikeServiceImpl implements HikeService {
         //Récupérer l'inventaire dans la BDD
         var categories = hikeRepository.getCategories(ownerId, hikeId);
 
-        //Check si null
-        if(categories.isEmpty())
-            return ResponseModel.buildResponse("404", "Aucune catégories disponibles.", null);
-
-
         return ResponseModel.buildResponse("200", "Catégories récupérées avec succès.", categories);
     }
 
     @Override
     public ResponseModel<EquipmentCategory> addCategory(String ownerId, String hikeId, EquipmentCategory category) {
+        log.info("Ajout d'une catégorie à une randonnée ({}) par l'utilisateur : {}", hikeId, ownerId);
 
         // Vérifier que la randonnée existe
         boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
@@ -246,12 +260,14 @@ public class HikeServiceImpl implements HikeService {
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("201", "Catégorie créée avec succès.", category);
         } else {
+            log.error("Erreur lors de l'ajout d'une catégorie à la randonnée : {} , par l'utilisateur : {}", hikeId, ownerId);
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
     }
 
     @Override
     public ResponseModel<EquipmentCategory> modifyCategory(String ownerId, String hikeId, EquipmentCategory category) {
+        log.info("Modification d'une catégorie ({}) d'une randonnée ({}) par l'utilisateur : {}", category.getId(), hikeId, ownerId);
 
         //TODO : FIltrer pour ne pas pouvoir modifier le poids de la catégorie à la main.
 
@@ -271,12 +287,14 @@ public class HikeServiceImpl implements HikeService {
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("200", "Catégorie modifiée avec succès.", category);
         } else {
+            log.error("Erreur lors de la modification d'une catégorie ({}) à la randonnée : {} , par l'utilisateur : {}", category.getId(), hikeId, ownerId);
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }
     }
 
     @Override
     public ResponseModel<EquipmentCategory> removeCategory(String ownerId, String hikeId, String categoryId) {
+        log.info("Suppression d'une catégorie ({}) d'une randonnée ({}) par l'utilisateur : {}", categoryId, hikeId, ownerId);
 
         // Vérifier que la randonnée existe
         boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
@@ -305,6 +323,7 @@ public class HikeServiceImpl implements HikeService {
         if (removeCatResult.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("204", "Catégorie supprimée et équipements mis à jour avec succès.", null);
         } else {
+            log.error("Erreur lors de la suppression d'une catégorie ({}) à la randonnée : {} , par l'utilisateur : {}", categoryId, hikeId, ownerId);
             return ResponseModel.buildResponse("404", "Erreur lors de la suppression de la catégorie.", null);
         }
     }
@@ -320,6 +339,8 @@ public class HikeServiceImpl implements HikeService {
     }
 
     private void resetEquipmentsCategory(String userId, String hikeId, List<Equipment> equipments){
+        log.info("Conséquences de la suppression d'un catégorie d'une randonnée ({}) par l'utilisateur : {}", hikeId, userId);
+
         for(Equipment equipment : equipments){
             HikeEquipmentDTO equip = HikeEquipmentDTO.builder().categoryId("DEFAULT").sourceId(equipment.getId()).build();
             hikeRepository.modifyEquipmentCategory(userId, hikeId, equip, equipment);

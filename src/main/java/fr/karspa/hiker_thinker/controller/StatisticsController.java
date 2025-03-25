@@ -4,12 +4,15 @@ import fr.karspa.hiker_thinker.dtos.UserStatisticsDTO;
 import fr.karspa.hiker_thinker.services.StatisticsService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import fr.karspa.hiker_thinker.utils.TokenUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/v1/statistics")
 public class StatisticsController {
+    private static final Logger log = LoggerFactory.getLogger(StatisticsController.class);
 
     private StatisticsService statisticsService;
     private TokenUtils tokenUtils;
@@ -22,9 +25,11 @@ public class StatisticsController {
 
     @GetMapping("/users/{userId}")
     public ResponseEntity<ResponseModel<UserStatisticsDTO>> getUserStatistics(@PathVariable("userId") String userId) {
-
         String requesterId = this.tokenUtils.retreiveUserId();
+        log.info("GET /statistics/users/{} => par {}", userId, requesterId);
+
         if(!requesterId.equals(userId)) {
+            log.info("Tentative de filoutage par {}", requesterId);
             return ResponseEntity.status(403).build();
         }
 

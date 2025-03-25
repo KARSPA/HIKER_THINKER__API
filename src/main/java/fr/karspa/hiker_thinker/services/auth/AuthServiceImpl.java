@@ -11,6 +11,8 @@ import fr.karspa.hiker_thinker.model.User;
 import fr.karspa.hiker_thinker.repository.AuthUserRepository;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -25,6 +27,8 @@ import java.util.List;
 @Service
 @AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     private AuthenticationManager authenticationManager;
     private JwtTokenProvider jwtTokenProvider;
@@ -50,10 +54,12 @@ public class AuthServiceImpl implements AuthService {
                     .jwt(token)
                     .build();
 
+            log.info("JWT créé pour l'utilisateur : {}", user.getId());
             return ResponseModel.buildResponse("200", "Connexion réussie.", loginResponseDTO);
 
 
         }catch(AuthenticationException e){
+            log.info("Erreur d'authentification.");
             return ResponseModel.buildResponse("703", "Erreur d'authentification. Pseudo ou mot de passe incorrect.", null);
         }
 
@@ -84,6 +90,7 @@ public class AuthServiceImpl implements AuthService {
 
         RegisterResponseDTO registerResponseDTO = new RegisterResponseDTO(savedUser.getId(), savedUser.getEmail());
 
+        log.info("Compte utilisateur créé.");
         return ResponseModel.buildResponse("201", "Utilisateur créé avec succès.", registerResponseDTO);
 
     }
@@ -95,6 +102,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(userId).orElse(null);
 
         if(user == null){
+            log.info("Vérification de connexion échouée.");
             return ResponseModel.buildResponse("404", "Utilisateur non trouvé.", null);
         }
 
@@ -114,6 +122,7 @@ public class AuthServiceImpl implements AuthService {
         String requesterId = jwtTokenProvider.getUserId(token);
 
         if(!userId.equals(requesterId)){
+            log.warn("Tentative de filoutage. Token : {}", token);
             return ResponseModel.buildResponse("403", "Interdit, vous n'êtes pas l'utilisateur.", null);
         }
 
@@ -143,6 +152,7 @@ public class AuthServiceImpl implements AuthService {
         String requesterId = jwtTokenProvider.getUserId(dto.getJwt());
 
         if(!dto.getUserId().equals(requesterId)){
+            log.warn("Tentative de modification filou. Token : {}", dto.getJwt());
             return ResponseModel.buildResponse("403", "Interdit, vous n'êtes pas l'utilisateur.", null);
         }
 

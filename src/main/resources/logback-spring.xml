@@ -9,9 +9,9 @@
 
     <!-- Pour les fichiers -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/logs/app.log</file>
+        <file>logs/app.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>/logs/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/app.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
@@ -19,12 +19,12 @@
         </encoder>
     </appender>
 
-    <root level="WARNING">
+    <root level="INFO">
         <appender-ref ref="CONSOLE" />
         <appender-ref ref="FILE" />
     </root>
 
     <!-- Vous pouvez définir des niveaux spécifiques pour vos packages -->
-<!--    <logger name="fr.karspa.hiker_thinker" level="WARNING"/>-->
+    <logger name="org.mongodb.driver" level="WARN"/>
 
 </configuration>

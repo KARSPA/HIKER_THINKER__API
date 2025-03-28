@@ -30,7 +30,9 @@ public class StatisticsRepository {
                         .avg("positive").as("averagePositive")
                         .sum("negative").as("totalNegative")
                         .avg("negative").as("averageNegative")
-                        .avg("totalWeight").as("averageWeight")
+                        .avg(
+                                ArithmeticOperators.Add.valueOf("totalWeight").add("weightCorrection")
+                        ).as("averageWeight")
                         .sum(
                                 ConditionalOperators.when(Criteria.where("durationUnit").is("jours"))
                                         .thenValueOf(ArithmeticOperators.Multiply.valueOf("duration").multiplyBy(24))

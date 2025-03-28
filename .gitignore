@@ -37,7 +37,7 @@ out/
 .vscode/
 .env
 
-docker-compose.yaml
+compose.yaml
 Dockerfile
 secrets/**
 

@@ -1,6 +1,7 @@
 package fr.karspa.hiker_thinker.controller;
 
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
@@ -51,6 +52,21 @@ public class InventoryController {
         ResponseModel<Equipment> response = inventoryService.addEquipment(userId, equipmentDTO);
 
         if(response.getCode().equals("201")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+
+    @PatchMapping("/equipments")
+    public ResponseEntity<ResponseModel<List<Equipment>>> updateEquipments(@RequestBody List<ReorderEquipmentDTO> equipmentModifications){
+        String userId = tokenUtils.retreiveUserId();
+        log.info("PATCH /inventory/equipments => par {}", userId);
+
+        ResponseModel<List<Equipment>> response = inventoryService.modifyEquipments(userId, equipmentModifications);
+
+        if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

@@ -21,4 +21,6 @@ public class Equipment {
 
     private String sourceId;
 
+    private int position;
+
 }

@@ -1,13 +1,22 @@
 package fr.karspa.hiker_thinker.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.result.UpdateResult;
+import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
+import org.springframework.data.mongodb.MongoExpression;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationExpression;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -45,6 +54,83 @@ public class InventoryRepository {
         Update update = new Update().set("inventory.equipments.$", equipment);
 
         return mongoTemplate.updateFirst(query, update, User.class);
+    }
+
+    public UpdateResult modifyEquipmentsOrders(String userId, List<ReorderEquipmentDTO> changes) {
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, "users");
+
+        for (ReorderEquipmentDTO change : changes) {
+            // Pour chaque catégorie, on récupère la liste ordonnée des équipements
+            List<String> equipmentIds = change.getOrderedEquipmentIds();
+            String categoryId = change.getCategoryId();
+
+            // Parcourir chaque équipement dans la liste pour mettre à jour son index (position)
+            for (int i = 0; i < equipmentIds.size(); i++) {
+                String equipmentId = equipmentIds.get(i);
+
+                Query query = new Query(Criteria.where("_id").is(userId)
+                        .and("inventory.equipments._id").is(equipmentId));
+
+                Update update = new Update()
+                        .set("inventory.equipments.$.categoryId", categoryId)
+                        .set("inventory.equipments.$.position", i);
+
+                bulkOps.updateOne(query, update);
+            }
+        }
+
+        BulkWriteResult result = bulkOps.execute();
+        return UpdateResult.acknowledged(result.getModifiedCount(), (long) result.getMatchedCount(), null);
+    }
+
+
+    public List<Equipment> getUpdatedEquipments(String userId, List<String> equipmentIds) {
+        try {
+            // Convertir la liste des equipmentIds en JSON (ex: ["id1", "id2", ...])
+            String equipmentIdsJson = new ObjectMapper().writeValueAsString(equipmentIds);
+
+            // Construire l'expression $filter manuellement
+            String filterExpr = "{ $filter: { input: '$inventory.equipments', as: 'eq', " +
+                    "cond: { $in: ['$$eq._id', " + equipmentIdsJson + "] } } }";
+
+            Aggregation aggregation = Aggregation.newAggregation(
+                    // Filtrer le document de l'utilisateur (ou de la randonnée)
+                    Aggregation.match(Criteria.where("_id").is(userId)),
+                    // Projetter en utilisant l'expression $filter pour extraire les équipements ciblés
+                    Aggregation.project()
+                            .and(AggregationExpression.from(MongoExpression.create(filterExpr)))
+                            .as("filteredEquipments")
+            );
+
+            AggregationResults<Document> results = mongoTemplate.aggregate(aggregation, "users", Document.class);
+            Document resultDoc = results.getUniqueMappedResult();
+            if (resultDoc == null || !resultDoc.containsKey("filteredEquipments")) {
+                return Collections.emptyList();
+            }
+
+            List<Document> equipmentsDocs = (List<Document>) resultDoc.get("filteredEquipments");
+            return equipmentsDocs.stream().map(doc -> {
+                Equipment eq = new Equipment();
+                eq.setId(doc.getString("_id"));
+                eq.setName(doc.getString("name"));
+                eq.setDescription(doc.getString("description"));
+                eq.setBrand(doc.getString("brand"));
+                Number weight = doc.get("weight", Number.class);
+                if (weight != null) {
+                    eq.setWeight(weight.floatValue());
+                }
+                eq.setCategoryId(doc.getString("categoryId"));
+                eq.setSourceId(doc.getString("sourceId"));
+                Number position = doc.get("position", Number.class);
+                if (position != null) {
+                    eq.setPosition(position.intValue());
+                }
+                return eq;
+            }).collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
 
@@ -183,6 +269,46 @@ public class InventoryRepository {
         Document doc = mongoTemplate.findOne(query, Document.class, "users");
 
         return (doc != null);
+    }
+
+    public boolean checkMultipleCategoryExistsById(String userId, Set<String> categoryIds) {
+
+        Query query = new Query(Criteria.where("_id").is(userId));
+        // On peut utiliser une projection pour ne récupérer que l'inventaire
+        query.fields().include("inventory.categories._id");
+
+        User user = mongoTemplate.findOne(query, User.class, "users");
+        if (user == null || user.getInventory() == null || user.getInventory().getCategories() == null) {
+            return false;
+        }
+
+        // Récupérer les ids de l'inventaire
+        Set<String> userCategoryIds = user.getInventory().getCategories().stream()
+                .map(EquipmentCategory::getId)
+                .collect(Collectors.toSet());
+
+        // Vérifier que tous les equipmentIds passés en paramètre sont présents
+        return userCategoryIds.containsAll(categoryIds);
+    }
+
+    public boolean checkMultipleEquipmentExistsById(String userId, Set<String> equipmentIds) {
+
+        Query query = new Query(Criteria.where("_id").is(userId));
+        // On peut utiliser une projection pour ne récupérer que l'inventaire
+        query.fields().include("inventory.equipments._id");
+
+        User user = mongoTemplate.findOne(query, User.class, "users");
+        if (user == null || user.getInventory() == null || user.getInventory().getEquipments() == null) {
+            return false;
+        }
+
+        // Récupérer les ids de l'inventaire
+        Set<String> userEquipmentIds = user.getInventory().getEquipments().stream()
+                .map(Equipment::getId)
+                .collect(Collectors.toSet());
+
+        // Vérifier que tous les equipmentIds passés en paramètre sont présents
+        return userEquipmentIds.containsAll(equipmentIds);
     }
 
     public List<Equipment> findEquipmentsByCategory(String userId, String categoryId){

@@ -4,6 +4,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
@@ -19,7 +20,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class InventoryServiceImpl implements InventoryService {
@@ -139,6 +142,37 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("200", "Équipement modifié avec succès.", equipment);
+        } else {
+            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
+
+    }
+
+    @Override
+    public ResponseModel<List<Equipment>> modifyEquipments(String userId, List<ReorderEquipmentDTO> equipmentChanges) {
+        log.info("Modification d'ordre d'équipements de l'utilisateur : {}", userId);
+
+        //Vérifier que les catégories existent
+        Set<String> categoryIds = equipmentChanges.stream().map(ReorderEquipmentDTO::getCategoryId).collect(Collectors.toSet());
+        System.out.println(categoryIds);
+
+        // TODO : À tester car pas sur du bon fonctionnement
+        boolean doesCategoriesExist = inventoryRepository.checkMultipleCategoryExistsById(userId, categoryIds);
+        if(!doesCategoriesExist){
+            return ResponseModel.buildResponse("400", "Une des catégories spécifiées n'existe pas.", null);
+        }
+
+        Set<String> equipmentIds = equipmentChanges.stream().flatMap(dto -> dto.getOrderedEquipmentIds().stream()).collect(Collectors.toSet());
+        boolean doesEquipmentsExist = inventoryRepository.checkMultipleEquipmentExistsById(userId, equipmentIds);
+        if(!doesEquipmentsExist){
+            return ResponseModel.buildResponse("400", "Un des équipements spécifiés n'existe pas.", null);
+        }
+
+        //Modifier les équipements avec ce qui est passé dans la requête.
+        UpdateResult result = inventoryRepository.modifyEquipmentsOrders(userId, equipmentChanges);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Équipements modifiés avec succès.", null);
         } else {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }

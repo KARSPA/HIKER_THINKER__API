@@ -2,6 +2,7 @@ package fr.karspa.hiker_thinker.services.impl;
 
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.HikeEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
@@ -17,8 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -204,6 +208,42 @@ public class HikeServiceImpl implements HikeService {
     }
 
     @Override
+    public ResponseModel<List<Equipment>> modifyEquipments(String ownerId, String hikeId, List<ReorderEquipmentDTO> equipmentChanges) {
+        log.info("Modification d'ordre d'équipements de la randonnée ({}) de l'utilisateur : {}", hikeId, ownerId);
+
+        // Vérifier que la randonnée existe
+        boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "La randonnée n'existe pas.", null);
+        }
+
+        //Vérifier que les catégories existent
+        Set<String> categoryIds = equipmentChanges.stream().map(ReorderEquipmentDTO::getCategoryId).collect(Collectors.toSet());
+        System.out.println(categoryIds);
+
+        boolean doesCategoriesExist = hikeRepository.checkMultipleCategoryExistsById(ownerId, hikeId, categoryIds);
+        if(!doesCategoriesExist){
+            return ResponseModel.buildResponse("400", "Une des catégories spécifiées n'existe pas dans cette randonnée.", null);
+        }
+
+        Set<String> equipmentIds = equipmentChanges.stream().flatMap(dto -> dto.getOrderedEquipmentIds().stream()).collect(Collectors.toSet());
+        boolean doesEquipmentsExist = hikeRepository.checkMultipleEquipmentExistsById(ownerId, hikeId, equipmentIds);
+        if(!doesEquipmentsExist){
+            return ResponseModel.buildResponse("400", "Un des équipements spécifiés n'existe pas dans cette randonnée.", null);
+        }
+
+        //Modifier les équipements avec ce qui est passé dans la requête.
+        UpdateResult result = hikeRepository.modifyEquipmentsOrders(ownerId, hikeId, equipmentChanges);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Équipements de la randonnée modifiés avec succès.", null);
+        } else {
+            return ResponseModel.buildResponse("200", "Il n'y avait rien à modifier.", null);
+        }
+
+    }
+
+    @Override
     public ResponseModel<String> removeEquipment(String ownerId, String hikeId, String equipmentId) {
         log.info("Suppression d'un équipement ({}) d'une randonnée ({}) par l'utilisateur : {}", equipmentId, hikeId, ownerId);
 
@@ -289,6 +329,33 @@ public class HikeServiceImpl implements HikeService {
         } else {
             log.error("Erreur lors de la modification d'une catégorie ({}) à la randonnée : {} , par l'utilisateur : {}", category.getId(), hikeId, ownerId);
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
+    }
+
+    @Override
+    public ResponseModel<List<EquipmentCategory>> modifyMultipleCategories(String ownerId, String hikeId, List<EquipmentCategory> categoryUpdates){
+        log.info("Modification de l'ordre des catégories de l'inventaire de l'utilisateur : {}", ownerId);
+
+        // Vérifier que la randonnée existe
+        boolean doesHikeExists = (hikeId != null) && this.checkHikeExistsById(ownerId, hikeId);
+        if(!doesHikeExists) {
+            return ResponseModel.buildResponse("404", "La randonnée n'existe pas.", null);
+        }
+
+        // NOTE : PAS de vérif sur l'existence des catégories via ID car opérations concurrentes possible (de suppression)
+
+        // Vérifier que les names sont biens uniques
+        Set<String> categoryNames = categoryUpdates.stream().map(EquipmentCategory::getName).collect(Collectors.toSet());
+        if(categoryNames.size() != categoryUpdates.size()){
+            return ResponseModel.buildResponse("400", "Un des noms de catégorie est présent en double.", null);
+        }
+
+        UpdateResult result = hikeRepository.modifyMultipleCategories(ownerId, hikeId, categoryUpdates);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Catégories de la randonnée modifiées avec succès.", this.getCategories(ownerId, hikeId).getData());
+        } else {
+            return ResponseModel.buildResponse("200", "Il n'y avait rien à changer.", this.getCategories(ownerId, hikeId).getData());
         }
     }
 

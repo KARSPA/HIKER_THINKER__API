@@ -131,6 +131,20 @@ public class InventoryController {
         }
     }
 
+    @PatchMapping("/categories")
+    public ResponseEntity<ResponseModel<List<EquipmentCategory>>> updateCategories(@RequestBody List<EquipmentCategory> categoryUpdates){
+        String userId = tokenUtils.retreiveUserId();
+        log.info("PATCH /inventory/categories => par {}", userId);
+
+        ResponseModel<List<EquipmentCategory>> response = inventoryService.modifyMultipleCategories(userId, categoryUpdates);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
     @PostMapping("/categories")
     public ResponseEntity<ResponseModel<EquipmentCategory>> addCategory(@RequestBody EquipmentCategory category){
         String userId = tokenUtils.retreiveUserId();

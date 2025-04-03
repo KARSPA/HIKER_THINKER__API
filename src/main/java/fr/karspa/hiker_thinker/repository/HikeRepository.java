@@ -1,17 +1,22 @@
 package fr.karspa.hiker_thinker.repository;
 
 
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.HikeEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Hike;
 import lombok.AllArgsConstructor;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -19,6 +24,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Repository
@@ -171,6 +177,37 @@ public class HikeRepository {
 
         return (doc != null);
     }
+    public boolean checkMultipleCategoryExistsById(String ownerId, String hikeId, Set<String> categoryIds) {
+
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("ownerId").is(ownerId).and("_id").is(new ObjectId(hikeId))),
+                Aggregation.unwind("inventory.categories"),
+                Aggregation.match(Criteria.where("inventory.categories._id").in(categoryIds)),
+                Aggregation.group().count().as("matchedCount")
+        );
+
+        AggregationResults<Document> results = mongoTemplate.aggregate(agg, "hikes", Document.class);
+        int matchedCount = results.getMappedResults().isEmpty() ? 0 : results.getMappedResults().get(0).getInteger("matchedCount");
+
+        // Vérifier que le nombre d'équipements trouvés correspond au nombre attendu
+        return matchedCount == categoryIds.size();
+    }
+
+    public boolean checkMultipleEquipmentExistsById(String ownerId, String hikeId, Set<String> equipmentIds) {
+
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("ownerId").is(ownerId).and("_id").is(new ObjectId(hikeId))),
+                Aggregation.unwind("inventory.equipments"),
+                Aggregation.match(Criteria.where("inventory.equipments._id").in(equipmentIds)),
+                Aggregation.group().count().as("matchedCount")
+        );
+
+        AggregationResults<Document> results = mongoTemplate.aggregate(agg, "hikes", Document.class);
+        int matchedCount = results.getMappedResults().isEmpty() ? 0 : results.getMappedResults().get(0).getInteger("matchedCount");
+
+        // Vérifier que le nombre d'équipements trouvés correspond au nombre attendu
+        return matchedCount == equipmentIds.size();
+    }
 
     public boolean checkEquipmentExistsById(String ownerId, String hikeId, String equipmentId) {
 
@@ -202,6 +239,56 @@ public class HikeRepository {
                 .orElse(null);
     }
 
+    public UpdateResult modifyEquipmentsOrders(String ownerId, String hikeId, List<ReorderEquipmentDTO> changes) {
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, "hikes");
+
+        for (ReorderEquipmentDTO change : changes) {
+            // Pour chaque catégorie, on récupère la liste ordonnée des équipements
+            List<String> equipmentIds = change.getOrderedEquipmentIds();
+            String categoryId = change.getCategoryId();
+
+            // Parcourir chaque équipement dans la liste pour mettre à jour son index (position)
+            for (int i = 0; i < equipmentIds.size(); i++) {
+                String equipmentId = equipmentIds.get(i);
+
+                Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(new ObjectId(hikeId))
+                        .and("inventory.equipments._id").is(equipmentId));
+
+                Update update = new Update()
+                        .set("inventory.equipments.$.categoryId", categoryId)
+                        .set("inventory.equipments.$.position", i);
+
+                bulkOps.updateOne(query, update);
+            }
+        }
+
+        BulkWriteResult result = bulkOps.execute();
+        return UpdateResult.acknowledged(result.getModifiedCount(), (long) result.getMatchedCount(), null);
+    }
+
+    public UpdateResult modifyMultipleCategories(String ownerId, String hikeId, List<EquipmentCategory> categoryUpdates) {
+
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, "hikes");
+
+        // Parcourir les catégories pour mettre à jour leur attribut 'order' (SAUF DEFAULT)
+        for (int i = 0; i < categoryUpdates.size(); i++) {
+            EquipmentCategory category = categoryUpdates.get(i);
+
+            Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(new ObjectId(hikeId))
+                    .and("inventory.categories._id").is(category.getId()));
+
+            if(!category.getId().equals("DEFAULT")) category.setOrder(i); //On ne modifie pas l'ordre de la catégorie par défaut
+
+            Update update = new Update()
+                    .set("inventory.categories.$", category);
+
+            bulkOps.updateOne(query, update);
+        }
+
+        BulkWriteResult result = bulkOps.execute();
+        return UpdateResult.acknowledged(result.getModifiedCount(), (long) result.getMatchedCount(), null);
+    }
+
 
 
 
@@ -229,7 +316,6 @@ public class HikeRepository {
 
     public List<EquipmentCategory> getCategories(String ownerId, String hikeId) {
         Query query = new Query(Criteria.where("ownerId").is(ownerId).and("_id").is(hikeId));
-        query.fields().include("inventory.categories");
 
         Hike hike = mongoTemplate.findOne(query, Hike.class);
         if(hike == null || hike.getInventory() == null) {

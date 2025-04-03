@@ -2,6 +2,7 @@ package fr.karspa.hiker_thinker.controller;
 
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.HikeEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeResponseDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
@@ -121,6 +122,20 @@ public class HikeController {
         }
     }
 
+    @PatchMapping("/{hikeId}/equipments")
+    public ResponseEntity<ResponseModel<List<Equipment>>> updateEquipmentsPositions(@PathVariable String hikeId, @RequestBody List<ReorderEquipmentDTO> equipmentModifications){
+        String userId = tokenUtils.retreiveUserId();
+        log.info("PATCH /hikes/{}/equipments => par {}", hikeId,  userId);
+
+        ResponseModel<List<Equipment>> response = hikeService.modifyEquipments(userId, hikeId, equipmentModifications);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
     @PatchMapping("/{hikeId}/equipments/{equipmentId}")
     public ResponseEntity<ResponseModel<HikeEquipmentDTO>> modifyEquipmentCategory(@PathVariable String hikeId,
                                                                                    @RequestBody HikeEquipmentDTO hikeEquipmentDTO,
@@ -176,6 +191,19 @@ public class HikeController {
         ResponseModel<EquipmentCategory> response = hikeService.addCategory(userId, hikeId, equipmentCategory);
 
         if(response.getCode().equals("201")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    @PatchMapping("/{hikeId}/categories")
+    public ResponseEntity<ResponseModel<List<EquipmentCategory>>> updateCategoriesOrder(@PathVariable String hikeId, @RequestBody List<EquipmentCategory> categoryUpdates){
+        String userId = tokenUtils.retreiveUserId();
+        log.info("PATCH /hikes/{}/categories => par {}", hikeId,  userId);
+
+        ResponseModel<List<EquipmentCategory>> response = hikeService.modifyMultipleCategories(userId, hikeId, categoryUpdates);
+
+        if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

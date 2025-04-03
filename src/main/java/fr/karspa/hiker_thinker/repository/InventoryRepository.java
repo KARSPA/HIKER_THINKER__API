@@ -10,6 +10,7 @@ import fr.karspa.hiker_thinker.model.Inventory;
 import fr.karspa.hiker_thinker.model.User;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.MongoExpression;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -162,7 +163,6 @@ public class InventoryRepository {
 
     public List<EquipmentCategory> getCategories(String userId) {
         Query query = new Query(Criteria.where("_id").is(userId));
-        query.fields().include("inventory.categories");
 
         User user = mongoTemplate.findOne(query, User.class);
         if(user == null || user.getInventory() == null) {
@@ -191,6 +191,31 @@ public class InventoryRepository {
         Update update = new Update().set("inventory.categories.$", category);
 
         return mongoTemplate.updateFirst(query, update, User.class);
+    }
+
+    public UpdateResult modifyMultipleCategories(String userId, List<EquipmentCategory> categoryUpdates) {
+
+        BulkOperations bulkOps = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, "users");
+
+        // Parcourir les catégories pour mettre à jour leur attribut 'order' (SAUF DEFAULT)
+        for (int i = 0; i < categoryUpdates.size(); i++) {
+            EquipmentCategory category = categoryUpdates.get(i);
+
+            Query query = new Query(Criteria.where("_id").is(userId)
+                    .and("inventory.categories._id").is(category.getId()));
+
+            if(category.getId().equals("DEFAULT")) continue;
+
+            category.setOrder(i);
+
+            Update update = new Update()
+                    .set("inventory.categories.$", category);
+
+            bulkOps.updateOne(query, update);
+        }
+
+        BulkWriteResult result = bulkOps.execute();
+        return UpdateResult.acknowledged(result.getModifiedCount(), (long) result.getMatchedCount(), null);
     }
 
     public UpdateResult removeCategoryInCategoryList(String userId, String categoryId) {
@@ -273,42 +298,34 @@ public class InventoryRepository {
 
     public boolean checkMultipleCategoryExistsById(String userId, Set<String> categoryIds) {
 
-        Query query = new Query(Criteria.where("_id").is(userId));
-        // On peut utiliser une projection pour ne récupérer que l'inventaire
-        query.fields().include("inventory.categories._id");
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("_id").is(new ObjectId(userId))),
+                Aggregation.unwind("inventory.categories"),
+                Aggregation.match(Criteria.where("inventory.categories._id").in(categoryIds)),
+                Aggregation.group().count().as("matchedCount")
+        );
 
-        User user = mongoTemplate.findOne(query, User.class, "users");
-        if (user == null || user.getInventory() == null || user.getInventory().getCategories() == null) {
-            return false;
-        }
+        AggregationResults<Document> results = mongoTemplate.aggregate(agg, "users", Document.class);
+        int matchedCount = results.getMappedResults().isEmpty() ? 0 : results.getMappedResults().get(0).getInteger("matchedCount");
 
-        // Récupérer les ids de l'inventaire
-        Set<String> userCategoryIds = user.getInventory().getCategories().stream()
-                .map(EquipmentCategory::getId)
-                .collect(Collectors.toSet());
-
-        // Vérifier que tous les equipmentIds passés en paramètre sont présents
-        return userCategoryIds.containsAll(categoryIds);
+        // Vérifier que le nombre d'équipements trouvés correspond au nombre attendu
+        return matchedCount == categoryIds.size();
     }
 
     public boolean checkMultipleEquipmentExistsById(String userId, Set<String> equipmentIds) {
 
-        Query query = new Query(Criteria.where("_id").is(userId));
-        // On peut utiliser une projection pour ne récupérer que l'inventaire
-        query.fields().include("inventory.equipments._id");
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("_id").is(new ObjectId(userId))),
+                Aggregation.unwind("inventory.equipments"),
+                Aggregation.match(Criteria.where("inventory.equipments._id").in(equipmentIds)),
+                Aggregation.group().count().as("matchedCount")
+        );
 
-        User user = mongoTemplate.findOne(query, User.class, "users");
-        if (user == null || user.getInventory() == null || user.getInventory().getEquipments() == null) {
-            return false;
-        }
+        AggregationResults<Document> results = mongoTemplate.aggregate(agg, "users", Document.class);
+        int matchedCount = results.getMappedResults().isEmpty() ? 0 : results.getMappedResults().get(0).getInteger("matchedCount");
 
-        // Récupérer les ids de l'inventaire
-        Set<String> userEquipmentIds = user.getInventory().getEquipments().stream()
-                .map(Equipment::getId)
-                .collect(Collectors.toSet());
-
-        // Vérifier que tous les equipmentIds passés en paramètre sont présents
-        return userEquipmentIds.containsAll(equipmentIds);
+        // Vérifier que le nombre d'équipements trouvés correspond au nombre attendu
+        return matchedCount == equipmentIds.size();
     }
 
     public List<Equipment> findEquipmentsByCategory(String userId, String categoryId){

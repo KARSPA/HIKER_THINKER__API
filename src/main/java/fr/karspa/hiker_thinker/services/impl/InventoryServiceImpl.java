@@ -18,10 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -156,7 +153,6 @@ public class InventoryServiceImpl implements InventoryService {
         Set<String> categoryIds = equipmentChanges.stream().map(ReorderEquipmentDTO::getCategoryId).collect(Collectors.toSet());
         System.out.println(categoryIds);
 
-        // TODO : À tester car pas sur du bon fonctionnement
         boolean doesCategoriesExist = inventoryRepository.checkMultipleCategoryExistsById(userId, categoryIds);
         if(!doesCategoriesExist){
             return ResponseModel.buildResponse("400", "Une des catégories spécifiées n'existe pas.", null);
@@ -174,7 +170,7 @@ public class InventoryServiceImpl implements InventoryService {
         if (result.getMatchedCount() > 0) {
             return ResponseModel.buildResponse("200", "Équipements modifiés avec succès.", null);
         } else {
-            return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+            return ResponseModel.buildResponse("200", "Il n'y avait rien à modifier.", null);
         }
 
     }
@@ -235,6 +231,32 @@ public class InventoryServiceImpl implements InventoryService {
             return ResponseModel.buildResponse("200", "Catégorie modifiée avec succès.", category);
         } else {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
+        }
+    }
+
+    @Override
+    public ResponseModel<List<EquipmentCategory>> modifyMultipleCategories(String userId, List<EquipmentCategory> categoryUpdates){
+        log.info("Modification de l'ordre des catégories de l'inventaire de l'utilisateur : {}", userId);
+
+        Set<String> categoryIds = categoryUpdates.stream().map(EquipmentCategory::getId).collect(Collectors.toSet());
+        // Vérifier que chaque catégorie existe (par ID)
+        boolean doesCategoriesExist = inventoryRepository.checkMultipleCategoryExistsById(userId, categoryIds);
+        if(!doesCategoriesExist){
+            return ResponseModel.buildResponse("400", "Une des catégories spécifiées n'existe pas.", null);
+        }
+
+        // Vérifier que les name sont biens uniques
+        Set<String> categoryNames = categoryUpdates.stream().map(EquipmentCategory::getName).collect(Collectors.toSet());
+        if(categoryNames.size() != categoryUpdates.size()){
+            return ResponseModel.buildResponse("400", "Un des noms de catégorie est présent en double.", null);
+        }
+
+        UpdateResult result = inventoryRepository.modifyMultipleCategories(userId, categoryUpdates);
+
+        if (result.getMatchedCount() > 0) {
+            return ResponseModel.buildResponse("200", "Ordre des catégories modifiées avec succès.", this.getCategories(userId).getData());
+        } else {
+            return ResponseModel.buildResponse("200", "Il n'y avait rien à changer.", this.getCategories(userId).getData());
         }
     }
 

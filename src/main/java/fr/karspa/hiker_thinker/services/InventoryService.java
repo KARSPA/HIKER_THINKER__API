@@ -32,6 +32,8 @@ public interface InventoryService {
 
     ResponseModel<EquipmentCategory> modifyCategory(String userId, EquipmentCategory category);
 
+    ResponseModel<List<EquipmentCategory>> modifyMultipleCategories(String userId, List<EquipmentCategory> categoryUpdates);
+
     ResponseModel<EquipmentCategory> removeCategory(String userId, String categoryId);
 
 }

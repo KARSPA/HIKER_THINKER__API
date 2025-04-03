@@ -8,14 +8,9 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 public class EquipmentCategory {
-
     private String id;
-
     private String name;
-
     private String icon;
-
     private int order;
-
     private int accumulatedWeight;
 }

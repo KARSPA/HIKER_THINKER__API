@@ -2,6 +2,7 @@ package fr.karspa.hiker_thinker.services;
 
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
@@ -16,7 +17,7 @@ public interface InventoryService {
 
     ResponseModel<Inventory> findByUserId(String userId); //Récupérer l'inventaire d'un utilisateur
 
-    ResponseModel<Equipment> getEquipmentById(String userId, String equipmentId);
+    ResponseModel<EquipmentDetailsDTO> getEquipmentById(String userId, String equipmentId);
 
     ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO); // Ajouter un équipement à l'inventaire
 

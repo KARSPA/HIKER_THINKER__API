@@ -1,5 +1,6 @@
 package fr.karspa.hiker_thinker.controller;
 
+import fr.karspa.hiker_thinker.dtos.EquipmentStatisticsDTO;
 import fr.karspa.hiker_thinker.dtos.UserStatisticsDTO;
 import fr.karspa.hiker_thinker.services.StatisticsService;
 import fr.karspa.hiker_thinker.utils.ResponseModel;
@@ -34,6 +35,15 @@ public class StatisticsController {
         }
 
         ResponseModel<UserStatisticsDTO> response = statisticsService.getUserStatistics(userId);
+
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/equipments/{equipmentId}")
+    public ResponseEntity<ResponseModel<EquipmentStatisticsDTO>> getEquipmentStatistics(@PathVariable("equipmentId") String equipmentId) {
+        String userId = this.tokenUtils.retreiveUserId();
+        log.info("GET /statistics/equipments/{} => par {}", equipmentId, userId);
+
+        ResponseModel<EquipmentStatisticsDTO> response = statisticsService.getEquipmentStatistics(userId, equipmentId);
 
         return ResponseEntity.ok(response);
     }

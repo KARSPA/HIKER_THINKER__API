@@ -2,6 +2,7 @@ package fr.karspa.hiker_thinker.controller;
 
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
@@ -74,11 +75,11 @@ public class InventoryController {
     }
 
     @GetMapping("/equipments/{equipmentId}")
-    public ResponseEntity<ResponseModel<Equipment>> getEquipment(@PathVariable String equipmentId){
+    public ResponseEntity<ResponseModel<EquipmentDetailsDTO>> getEquipment(@PathVariable String equipmentId){
         String userId = tokenUtils.retreiveUserId();
         log.info("GET /inventory/equipments/{} => par {}", equipmentId, userId);
 
-        ResponseModel<Equipment> response = inventoryService.getEquipmentById(userId, equipmentId);
+        ResponseModel<EquipmentDetailsDTO> response = inventoryService.getEquipmentById(userId, equipmentId);
 
         if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);

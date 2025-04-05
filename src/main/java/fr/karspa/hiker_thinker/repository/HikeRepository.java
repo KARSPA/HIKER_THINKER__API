@@ -75,6 +75,12 @@ public class HikeRepository {
         return mongoTemplate.findAndRemove(query, Hike.class);
     }
 
+    public List<Hike> findHikesUsedByEquipmentId(String ownerId, String equipmentId){
+        Query hikeQuery = new Query(Criteria.where("ownerId").is(ownerId).and("inventory.equipments.sourceId").is(equipmentId));
+        List<Hike> hikes = mongoTemplate.find(hikeQuery, Hike.class);
+        return hikes;
+    }
+
 
 
 

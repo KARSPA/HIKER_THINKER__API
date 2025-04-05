@@ -171,6 +171,23 @@ public class InventoryRepository {
         return user.getInventory().getCategories();
     }
 
+    public EquipmentCategory getCategoryById(String userId, String categoryId) {
+        // Construire la query pour récupérer uniquement l'inventaire de l'utilisateur
+        Query query = new Query(Criteria.where("_id").is(userId));
+        query.fields().include("inventory.categories");
+
+        User user = mongoTemplate.findOne(query, User.class);
+        if(user == null || user.getInventory() == null || user.getInventory().getCategories() == null) {
+            return null;
+        }
+        return user.getInventory().getCategories()
+                .stream()
+                .filter(category -> categoryId.equals(category.getId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+
 
     public UpdateResult addCategoryToCategoryList(String userId, EquipmentCategory category) {
 

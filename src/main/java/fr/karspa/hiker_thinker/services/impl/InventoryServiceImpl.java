@@ -5,10 +5,14 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
+import fr.karspa.hiker_thinker.dtos.responses.HikeSummaryDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
+import fr.karspa.hiker_thinker.model.Hike;
 import fr.karspa.hiker_thinker.model.Inventory;
+import fr.karspa.hiker_thinker.repository.HikeRepository;
 import fr.karspa.hiker_thinker.repository.InventoryRepository;
 import fr.karspa.hiker_thinker.services.InventoryService;
 import fr.karspa.hiker_thinker.utils.RandomGenerator;
@@ -27,9 +31,11 @@ public class InventoryServiceImpl implements InventoryService {
     private static final Logger log = LoggerFactory.getLogger(InventoryServiceImpl.class);
 
     private InventoryRepository inventoryRepository;
+    private HikeRepository hikeRepository;
 
-    public InventoryServiceImpl(InventoryRepository inventoryRepository) {
+    public InventoryServiceImpl(InventoryRepository inventoryRepository, HikeRepository hikeRepository) {
         this.inventoryRepository = inventoryRepository;
+        this.hikeRepository = hikeRepository;
     }
 
     @Override
@@ -45,7 +51,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public ResponseModel<Equipment> getEquipmentById(String userId, String equipmentId) {
+    public ResponseModel<EquipmentDetailsDTO> getEquipmentById(String userId, String equipmentId) {
         log.info("Récupération d'un équipement ({}) de l'inventaire de l'utilisateur : {}", equipmentId, userId);
 
         Equipment equipment = inventoryRepository.findEquipmentById(userId, equipmentId);
@@ -53,7 +59,19 @@ public class InventoryServiceImpl implements InventoryService {
         if(equipment == null)
             return ResponseModel.buildResponse("404", "Aucun équipement trouvé.", null);
 
-        return ResponseModel.buildResponse("200", "Équipement récupéré avec succès.", equipment);
+        EquipmentCategory category = inventoryRepository.getCategoryById(userId, equipment.getCategoryId());
+
+        //Affecter le nom de la catégorie au DTO.
+        EquipmentDetailsDTO equipmentDetailsDTO = (new EquipmentDetailsDTO()).fromEquipment(equipment, category.getName());
+
+        //Chercher et affecter les randonnées dans lesquelles l'équipement apparait.
+        List<HikeSummaryDTO> hikes = hikeRepository.findHikesUsedByEquipmentId(userId, equipmentId).stream()
+                .map(hike -> new HikeSummaryDTO(hike.getId(), hike.getTitle(), hike.getTotalWeight(), hike.getWeightCorrection()))
+                .toList();
+
+        equipmentDetailsDTO.setHikes(hikes);
+
+        return ResponseModel.buildResponse("200", "Équipement récupéré avec succès.", equipmentDetailsDTO);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package fr.karspa.hiker_thinker.controller;
 
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ModifyEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
@@ -61,7 +62,7 @@ public class InventoryController {
 
 
     @PatchMapping("/equipments")
-    public ResponseEntity<ResponseModel<List<Equipment>>> updateEquipments(@RequestBody List<ReorderEquipmentDTO> equipmentModifications){
+    public ResponseEntity<ResponseModel<List<Equipment>>> updateEquipmentsOrders(@RequestBody List<ReorderEquipmentDTO> equipmentModifications){
         String userId = tokenUtils.retreiveUserId();
         log.info("PATCH /inventory/equipments => par {}", userId);
 
@@ -89,12 +90,13 @@ public class InventoryController {
     }
 
     @PatchMapping("/equipments/{equipmentId}")
-    public ResponseEntity<ResponseModel<Equipment>> modifyEquipment(@PathVariable String equipmentId, @RequestBody Equipment equipment){
+    public ResponseEntity<ResponseModel<Equipment>> modifyEquipment(@PathVariable String equipmentId, @RequestBody ModifyEquipmentDTO equipmentDTO){
         String userId = tokenUtils.retreiveUserId();
         log.info("PATCH /inventory/equipments/{} => par {}", equipmentId, userId);
 
-        equipment.setId(equipmentId);
-        ResponseModel<Equipment> response = inventoryService.modifyEquipment(userId, equipment);
+        equipmentDTO.getEquipment().setId(equipmentId);
+        System.err.println(equipmentDTO);
+        ResponseModel<Equipment> response = inventoryService.modifyEquipment(userId, equipmentDTO);
 
         if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);

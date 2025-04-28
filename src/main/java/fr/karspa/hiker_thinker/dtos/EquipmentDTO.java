@@ -15,7 +15,7 @@ public class EquipmentDTO {
     private String description;
     private String brand;
 
-    private Float weight;
+    private Integer weight;
 
     private String categoryName;
 

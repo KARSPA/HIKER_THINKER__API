@@ -15,7 +15,7 @@ public class Equipment {
     private String description;
     private String brand;
 
-    private Float weight;
+    private Integer weight;
 
     private String categoryId;
 

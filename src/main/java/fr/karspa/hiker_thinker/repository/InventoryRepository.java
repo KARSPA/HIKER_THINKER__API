@@ -118,7 +118,7 @@ public class InventoryRepository {
                 eq.setBrand(doc.getString("brand"));
                 Number weight = doc.get("weight", Number.class);
                 if (weight != null) {
-                    eq.setWeight(weight.floatValue());
+                    eq.setWeight(weight.intValue());
                 }
                 eq.setCategoryId(doc.getString("categoryId"));
                 eq.setSourceId(doc.getString("sourceId"));

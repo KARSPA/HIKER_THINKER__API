@@ -4,6 +4,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ModifyEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeSummaryDTO;
@@ -130,33 +131,47 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment) {
-        log.info("Modification d'un équipement ({}) à l'inventaire de l'utilisateur : {}", equipment.getId(), userId);
+    public ResponseModel<Equipment> modifyEquipment(String userId, ModifyEquipmentDTO equipmentDTO) {
+        log.info("Modification d'un équipement ({}) à l'inventaire de l'utilisateur : {}", equipmentDTO.getEquipment().getId(), userId);
 
         //Vérifier que l'équipement avec cet id existe dans l'inventaire.
-        boolean doesIdExists = this.checkEquipmentExistsById(userId, equipment.getId());
+        boolean doesIdExists = this.checkEquipmentExistsById(userId, equipmentDTO.getEquipment().getId());
 
         if(!doesIdExists){
             return ResponseModel.buildResponse("404", "Aucun équipement avec cet identifiant n'existe dans votre inventaire.", null);
         }
 
         //On appelle la même méthode que pour l'ajout mais les requêtes de vérifications ne sont pas les mêmes si un id à l'équipement est passé ou non.
-        boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipment);
+        boolean isNameAvailable = this.checkAvailableEquipmentName(userId, equipmentDTO.getEquipment());
         if(!isNameAvailable){
-            return ResponseModel.buildResponse("409", "Un équipement avec ce nom existe déjà dans votre inventaire. ("+equipment.getName()+")", null);
+            return ResponseModel.buildResponse("409", "Un équipement avec ce nom existe déjà dans votre inventaire. ("+equipmentDTO.getEquipment().getName()+")", null);
         }
 
         // Vérifier que la nouvelle catégorie existe bien dans inventory.categories
-        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsById(userId, equipment.getCategoryId());
+        boolean doesCategoryExist = inventoryRepository.checkCategoryExistsById(userId, equipmentDTO.getEquipment().getCategoryId());
         if(!doesCategoryExist){
             return ResponseModel.buildResponse("400", "La catégorie de l'équipement n'existe pas dans votre inventaire. Veuillez la créée avant.", null);
         }
 
         //Modifier l'équipement avec ce qui est passé dans la requête.
-        UpdateResult result = inventoryRepository.modifyEquipment(userId, equipment);
+        UpdateResult result = inventoryRepository.modifyEquipment(userId, equipmentDTO.getEquipment());
+
+        //TODO : Modifier en conséquences les équipements dans les randonnées (et modèles) antérieurs à la date limite indiquée dans le DTO
+        if(equipmentDTO.getHasConsequences()){ // Si on va modifier des randos
+
+            //On va modifier l'équipement dans les randonnées dont la date est postérieure (après) à celle limite passée dans le DTO
+            // => on garde les anciennes randos et on modifie celles qui ont eu lieu après une certaine date.
+            UpdateResult equipmentResult = this.hikeRepository.updateHikesEquipment(userId, equipmentDTO);
+
+            if(equipmentResult.getModifiedCount() != 0) {
+                this.hikeRepository.findAndRecalculateHikesWeightByEquipmentIdAndLimitDate(userId, equipmentDTO);
+            }
+        }
+
+        // TODO : On modifiera les modèles en conséquences quoi-qu'il arrive ... (car utilisés pour de futures randonnées)
 
         if (result.getMatchedCount() > 0) {
-            return ResponseModel.buildResponse("200", "Équipement modifié avec succès.", equipment);
+            return ResponseModel.buildResponse("200", "Équipement modifié avec succès.", equipmentDTO.getEquipment());
         } else {
             return ResponseModel.buildResponse("404", "Erreur bizarre.", null);
         }

@@ -1,6 +1,7 @@
 package fr.karspa.hiker_thinker.services;
 
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ModifyEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
@@ -21,7 +22,7 @@ public interface InventoryService {
 
     ResponseModel<Equipment> addEquipment(String userId, EquipmentDTO equipmentDTO); // Ajouter un équipement à l'inventaire
 
-    ResponseModel<Equipment> modifyEquipment(String userId, Equipment equipment); // Modifier un équipement de l'inventaire
+    ResponseModel<Equipment> modifyEquipment(String userId, ModifyEquipmentDTO equipment); // Modifier un équipement de l'inventaire
 
     ResponseModel<List<Equipment>> modifyEquipments(String userId, List<ReorderEquipmentDTO> equipments); // Modifier l'ordre/catégorisation des équipments de l'inventaire
 

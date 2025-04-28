@@ -2,14 +2,17 @@ package fr.karspa.hiker_thinker.repository;
 
 
 import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.HikeEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.ModifyEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Hike;
+import fr.karspa.hiker_thinker.model.Inventory;
 import lombok.AllArgsConstructor;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -24,6 +27,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,8 +35,40 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class HikeRepository {
 
+    private final MongoClient mongo;
     private MongoTemplate mongoTemplate;
 
+    public void recalculateHikeWeights(String ownerId, String hikeId){
+        Query query = Query.query(
+                Criteria.where("ownerId").is(ownerId)
+                        .and("_id").is(hikeId)
+        );
+
+        Hike hike = mongoTemplate.findOne(query, Hike.class);
+        if (hike == null || hike.getInventory() == null) {
+            return;
+        }
+
+        Inventory inv = hike.getInventory();
+        List<Equipment> eqs = inv.getEquipments();
+        List<EquipmentCategory> cats = inv.getCategories();
+
+        double totalWeight = eqs.stream().mapToInt(Equipment::getWeight).sum();
+
+        Map<String, Integer> sumsByCat = eqs.stream()
+                .collect(Collectors.groupingBy(
+                        Equipment::getCategoryId,
+                        Collectors.summingInt(Equipment::getWeight)
+                ));
+
+        cats.forEach(cat -> cat.setAccumulatedWeight(sumsByCat.getOrDefault(cat.getId(), 0)));
+
+        Update update = new Update()
+                .set("totalWeight", totalWeight)
+                .set("inventory.categories", cats);
+
+        mongoTemplate.updateFirst(query, update, Hike.class);
+    }
 
     public List<Hike> findAll(String ownerId, boolean withInventory){
         Query query = new Query(Criteria.where("ownerId").is(ownerId));
@@ -81,7 +117,57 @@ public class HikeRepository {
         return hikes;
     }
 
+    public void findAndRecalculateHikesWeightByEquipmentIdAndLimitDate(String ownerId, ModifyEquipmentDTO equipmentDTO){
 
+        // Si la date est nulle => on modifie toutes les randonnées
+        Query hikeQuery = new Query(Criteria.where("ownerId").is(ownerId)
+                .and("inventory.equipments.sourceId").is(equipmentDTO.getEquipment().getId()));
+
+        // Sinon => on modifie les randonnées postérieures
+        if(equipmentDTO.getConsequencesLimitDate() != null){
+            hikeQuery.addCriteria(Criteria.where("date").gte(equipmentDTO.getConsequencesLimitDate()));
+        }
+
+        List<String> hikeIds = mongoTemplate.find(hikeQuery, Hike.class)
+                .stream()
+                .map(Hike::getId)
+                .toList();
+
+        hikeIds.forEach(hikeId ->
+                this.recalculateHikeWeights(ownerId, hikeId)
+        );
+    }
+
+    public UpdateResult updateHikesEquipment(String ownerId, ModifyEquipmentDTO equipmentDTO){
+
+        // Si la date est nulle => on modifie toutes les randonnées
+        Query hikeQuery = new Query(Criteria.where("ownerId").is(ownerId)
+                .and("inventory.equipments.sourceId").is(equipmentDTO.getEquipment().getId()));
+
+        // Sinon => on modifie les randonnées postérieures
+        if(equipmentDTO.getConsequencesLimitDate() != null){
+           hikeQuery.addCriteria(Criteria.where("date").gte(equipmentDTO.getConsequencesLimitDate()));
+        }
+
+        Update update = new Update().filterArray(Criteria.where("inventory.equipments.sourceId").is(equipmentDTO.getEquipment().getId()))
+                .set("inventory.equipments.$[elem].name",
+                        equipmentDTO.getEquipment().getName())
+                .set("inventory.equipments.$[elem].description",
+                        equipmentDTO.getEquipment().getDescription())
+                .set("inventory.equipments.$[elem].brand",
+                        equipmentDTO.getEquipment().getBrand())
+                .set("inventory.equipments.$[elem].weight",
+                        equipmentDTO.getEquipment().getWeight())
+                .set("inventory.equipments.$[elem].categoryId",
+                        equipmentDTO.getEquipment().getCategoryId())
+                .set("inventory.equipments.$[elem].position",
+                        0); // On le met au début des équipements de la catégorie
+
+        return mongoTemplate.update(Hike.class)
+                .matching(hikeQuery)
+                .apply(update)
+                .all();
+    }
 
 
 

@@ -149,7 +149,7 @@ public class HikeRepository {
            hikeQuery.addCriteria(Criteria.where("date").gte(equipmentDTO.getConsequencesLimitDate()));
         }
 
-        Update update = new Update().filterArray(Criteria.where("inventory.equipments.sourceId").is(equipmentDTO.getEquipment().getId()))
+        Update update = new Update().filterArray(Criteria.where("elem.sourceId").is(equipmentDTO.getEquipment().getId()))
                 .set("inventory.equipments.$[elem].name",
                         equipmentDTO.getEquipment().getName())
                 .set("inventory.equipments.$[elem].description",
@@ -158,8 +158,8 @@ public class HikeRepository {
                         equipmentDTO.getEquipment().getBrand())
                 .set("inventory.equipments.$[elem].weight",
                         equipmentDTO.getEquipment().getWeight())
-                .set("inventory.equipments.$[elem].categoryId",
-                        equipmentDTO.getEquipment().getCategoryId())
+//                .set("inventory.equipments.$[elem].categoryId", //  BIZARRE de modif la catégorie depuis l'inventaire ...
+//                        equipmentDTO.getEquipment().getCategoryId())
                 .set("inventory.equipments.$[elem].position",
                         0); // On le met au début des équipements de la catégorie
 

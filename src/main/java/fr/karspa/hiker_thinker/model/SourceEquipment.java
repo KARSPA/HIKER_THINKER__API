@@ -2,6 +2,7 @@ package fr.karspa.hiker_thinker.model;
 
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Data
@@ -9,18 +10,17 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "sEquipments")
+@Document(collection = "equipments")
 public class SourceEquipment {
 
     @MongoId
     private String id;
 
+    private String url;
     private String name;
     private String description;
     private String brand;
 
-    private Float weight;
-
-    private String category;
-
+    @Field("weight_g")
+    private Integer weight;
 }

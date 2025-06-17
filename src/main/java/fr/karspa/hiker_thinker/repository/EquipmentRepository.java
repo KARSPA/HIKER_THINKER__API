@@ -10,6 +10,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -100,24 +102,31 @@ public class EquipmentRepository {
             }
         }
     }
-
-
+    
     private Criteria buildCriteriaForFilters(EquipmentSearchDTO searchParams) {
-        Criteria criteria = new Criteria();
+        List<Criteria> allCriteria = new ArrayList<>();
 
-        // 1) Si un nom est fourni, on cherche en "contains" (regex, insensible à la casse)
+        // 1) Filtre "name" multi-termes
         if (searchParams.getName() != null && !searchParams.getName().isBlank()) {
-            // Utilise une regex pour retrouver "name" partiel, sans tenir compte de la casse
-            criteria = criteria.and("name")
-                    .regex(".*" + Pattern.quote(searchParams.getName()) + ".*", "i");
+            String[] terms = searchParams.getName().trim().split("\\s+");
+            // Pour chaque mot, on crée un Criteria.where("name").regex(...)
+            List<Criteria> nameCriteria = Arrays.stream(terms)
+                    .map(term -> {
+                        String pattern = ".*" + Pattern.quote(term) + ".*";
+                        return Criteria.where("name").regex(pattern, "i");
+                    })
+                    .toList();
+            // On combine ces critères en un seul AND :
+            allCriteria.add(new Criteria().andOperator(nameCriteria.toArray(new Criteria[0])));
         }
 
-        // 2) Si une marque est fournie
+        // 2) Filtre "brand" classique
         if (searchParams.getBrand() != null && !searchParams.getBrand().isBlank()) {
-            criteria = criteria.and("brand")
-                    .regex(".*" + Pattern.quote(searchParams.getBrand()) + ".*", "i");
+            String pattern = ".*" + Pattern.quote(searchParams.getBrand()) + ".*";
+            allCriteria.add(Criteria.where("brand").regex(pattern, "i"));
         }
 
+        // 3) Filtre "weight_g" min/max
         if (searchParams.getMinWeight() != null || searchParams.getMaxWeight() != null) {
             Criteria weightCrit = Criteria.where("weight_g");
             if (searchParams.getMinWeight() != null) {
@@ -126,14 +135,22 @@ public class EquipmentRepository {
             if (searchParams.getMaxWeight() != null) {
                 weightCrit = weightCrit.lte(searchParams.getMaxWeight());
             }
-            // On ajoute ce sous-criteria à l'ensemble
-            criteria = criteria.andOperator(weightCrit);
+            allCriteria.add(weightCrit);
         }
 
+        // Si on n’a aucun filtre, on retourne un Criteria vide (match tout)
+        if (allCriteria.isEmpty()) {
+            return new Criteria();
+        }
 
-
-        return criteria;
+        // Sinon on les combine tous en un AND global
+        if (allCriteria.size() == 1) {
+            return allCriteria.get(0);
+        } else {
+            return new Criteria().andOperator(allCriteria.toArray(new Criteria[0]));
+        }
     }
+
 
 
 }

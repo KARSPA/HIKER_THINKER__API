@@ -3,7 +3,9 @@ package fr.karspa.hiker_thinker.services;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ModifyEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.filters.EquipmentSearchDTO;
 import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentPageDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
@@ -17,6 +19,8 @@ import java.util.List;
 public interface InventoryService {
 
     ResponseModel<Inventory> findByUserId(String userId); //Récupérer l'inventaire d'un utilisateur
+
+    ResponseModel<EquipmentPageDTO> findByUserIdWithFilters(String userId, EquipmentSearchDTO searchDTO); //Récupérer l'inventaire d'un utilisateur
 
     ResponseModel<EquipmentDetailsDTO> getEquipmentById(String userId, String equipmentId);
 

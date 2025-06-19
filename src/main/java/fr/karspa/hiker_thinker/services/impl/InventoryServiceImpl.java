@@ -6,7 +6,9 @@ import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ModifyEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.filters.EquipmentSearchDTO;
 import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentPageDTO;
 import fr.karspa.hiker_thinker.dtos.responses.HikeSummaryDTO;
 import fr.karspa.hiker_thinker.dtos.responses.InventoryDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
@@ -49,6 +51,18 @@ public class InventoryServiceImpl implements InventoryService {
             return ResponseModel.buildResponse("710", "Aucun inventaire disponible.", null);
 
         return ResponseModel.buildResponse("200", "Inventaire récupéré avec succès.", inventory);
+    }
+
+    @Override
+    public ResponseModel<EquipmentPageDTO> findByUserIdWithFilters(String userId, EquipmentSearchDTO searchDTO) {
+        log.info("Récupération de l'inventaire de l'utilisateur (avec filtres) : {}", userId);
+
+        EquipmentPageDTO response = inventoryRepository.getInventoryWithFilters(userId, searchDTO);
+
+        if(response == null)
+            return ResponseModel.buildResponse("710", "Aucun inventaire disponible.", null);
+
+        return ResponseModel.buildResponse("200", "Inventaire récupéré avec succès.", response);
     }
 
     @Override

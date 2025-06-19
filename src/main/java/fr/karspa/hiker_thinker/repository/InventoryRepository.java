@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.result.UpdateResult;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.filters.EquipmentSearchDTO;
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentPageDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
@@ -11,6 +13,7 @@ import fr.karspa.hiker_thinker.model.User;
 import org.bson.Document;
 import lombok.AllArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.MongoExpression;
 import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -24,6 +27,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Repository
@@ -43,6 +47,97 @@ public class InventoryRepository {
 
         return user.getInventory();
     }
+
+    public EquipmentPageDTO getInventoryWithFilters(String userId, EquipmentSearchDTO filter) {
+        // 1) build des conditions $and pour $filter
+        List<Document> conds = new ArrayList<>();
+
+        // — filtre sur le nom (mots séparés)
+        if (trimNotBlank(filter.getName())) {
+            for (String term : filter.getName().trim().split("\\s+")) {
+                conds.add(new Document(
+                        "$regexMatch",
+                        new Document("input", "$$eq.name")
+                                .append("regex", ".*" + Pattern.quote(term) + ".*")
+                                .append("options", "i")
+                ));
+            }
+        }
+
+        // — filtre sur la marque
+        if (trimNotBlank(filter.getBrand())) {
+            conds.add(new Document(
+                    "$regexMatch",
+                    new Document("input", "$$eq.brand")
+                            .append("regex", ".*" + Pattern.quote(filter.getBrand()) + ".*")
+                            .append("options", "i")
+            ));
+        }
+
+        // — filtre poids min
+        if (filter.getMinWeight() != null) {
+            conds.add(new Document("$gte", List.of("$$eq.weight", filter.getMinWeight())));
+        }
+        // — filtre poids max
+        if (filter.getMaxWeight() != null) {
+            conds.add(new Document("$lte", List.of("$$eq.weight", filter.getMaxWeight())));
+        }
+
+        // 2) expression $filter pour ne garder que les équipements valides
+        Document filterExpr = new Document(
+                "$filter",
+                new Document("input", "$inventory.equipments")
+                        .append("as",   "eq")
+                        .append("cond", new Document("$and", conds))
+        );
+
+        // 3) projection initiale : filteredEquipments + totalCount
+        Document projectStage = new Document("$project", new Document()
+                .append("totalCount", new Document("$size", filterExpr))
+                .append("filtered",  filterExpr)
+        );
+
+        // 4) pagination et tri sur l’array filtered
+        int skip = filter.getPageNumber() * filter.getPageSize();
+        int limit = filter.getPageSize();
+        int sortDirection = filter.getSortDir().equalsIgnoreCase("ASC") ? 1 : -1;
+        String sortField = switch(filter.getSortBy()) {
+            case "weight" -> "weight";
+            default        -> "name";
+        };
+
+        Document pagedStage = new Document("$project", new Document()
+                // on recopie totalCount
+                .append("totalCount", "$totalCount")
+                // tri + slice
+                .append("equipments", new Document("$slice", List.of(
+                        new Document(
+                                "$sortArray",
+                                new Document("input",  "$filtered")
+                                        .append("sortBy", new Document(sortField, sortDirection))
+                        ),
+                        skip,
+                        limit
+                )))
+        );
+
+        // 5) on fabrique le pipeline
+        Aggregation agg = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("_id").is(userId)),
+                context -> projectStage,
+                context -> pagedStage
+        );
+
+        // 6) on exécute et on mappe dans notre DTO
+        AggregationResults<EquipmentPageDTO> res =
+                mongoTemplate.aggregate(agg, "users", EquipmentPageDTO.class);
+
+        EquipmentPageDTO page = res.getUniqueMappedResult();
+        return page != null
+                ? page
+                : new EquipmentPageDTO(0L, List.of());
+    }
+
 
 
     public UpdateResult modifyEquipment(String userId, Equipment equipment) {
@@ -425,4 +520,8 @@ public class InventoryRepository {
                 .orElse(null);
     }
 
+
+    private boolean trimNotBlank(String s) {
+        return s != null && !s.isBlank();
+    }
 }

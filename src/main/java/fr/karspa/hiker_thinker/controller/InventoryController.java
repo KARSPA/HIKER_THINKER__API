@@ -3,7 +3,10 @@ package fr.karspa.hiker_thinker.controller;
 import fr.karspa.hiker_thinker.dtos.EquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ModifyEquipmentDTO;
 import fr.karspa.hiker_thinker.dtos.ReorderEquipmentDTO;
+import fr.karspa.hiker_thinker.dtos.filters.EquipmentSearchDTO;
 import fr.karspa.hiker_thinker.dtos.responses.EquipmentDetailsDTO;
+import fr.karspa.hiker_thinker.dtos.responses.EquipmentPageDTO;
+import fr.karspa.hiker_thinker.dtos.responses.SourceEquipmentPageDTO;
 import fr.karspa.hiker_thinker.model.Equipment;
 import fr.karspa.hiker_thinker.model.EquipmentCategory;
 import fr.karspa.hiker_thinker.model.Inventory;
@@ -38,6 +41,29 @@ public class InventoryController {
         log.info("GET /inventory => par {}", userId);
 
         ResponseModel<Inventory> response = inventoryService.findByUserId(userId);
+
+        if(response.getCode().equals("200")){
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    @GetMapping("/filtered")
+    public ResponseEntity<ResponseModel<EquipmentPageDTO>> getInventoryFiltered(@RequestParam(name = "name", required = false) String nameFilter,
+                                                                                @RequestParam(name = "brand", required = false) String brandFilter,
+                                                                                @RequestParam(name = "minWeight", required = false) Integer minWeight,
+                                                                                @RequestParam(name = "maxWeight", required = false) Integer maxWeight,
+                                                                                @RequestParam(name = "pageNumber", required = false, defaultValue = "0") Integer pageNumber,
+                                                                                @RequestParam(name = "pageSize", defaultValue = "20") Integer pageSize,
+                                                                                @RequestParam(name = "sortBy", defaultValue = "name") String sortBy,
+                                                                                @RequestParam(name = "sortDir", defaultValue = "ASC") String sortDirection){
+        String userId = tokenUtils.retreiveUserId();
+        log.info("GET /inventory => par {}", userId);
+
+        EquipmentSearchDTO equipmentSearchDTO = new EquipmentSearchDTO(nameFilter, brandFilter, minWeight, maxWeight, pageNumber, pageSize, sortBy, sortDirection);
+
+        ResponseModel<EquipmentPageDTO> response = inventoryService.findByUserIdWithFilters(userId, equipmentSearchDTO);
 
         if(response.getCode().equals("200")){
             return ResponseEntity.status(HttpStatus.OK).body(response);
